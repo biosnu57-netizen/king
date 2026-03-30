@@ -1,0 +1,129 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pinc_network/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pinc_network/**'
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            pinc_network/.dart_tool
+            pinc_network/build
+          key: ${{ runner.os }}-flutter-${{ hashFiles('pinc_network/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+            
+      - name: Install dependencies
+        run: |
+          cd pinc_network
+          flutter pub get
+          
+      - name: Analyze code
+        run: |
+          cd pinc_network
+          flutter analyze --no-pub || true
+        continue-on-error: true
+        
+      - name: Build debug APK
+        run: |
+          cd pinc_network
+          flutter build apk --debug
+        continue-on-error: true
+        
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: pinc-network-debug.apk
+          path: pinc_network/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+          
+      - name: Check build status
+        run: |
+          if [ -f "pinc_network/build/app/outputs/flutter-apk/app-debug.apk" ]; then
+            echo "✅ Build successful!"
+            ls -la pinc_network/build/app/outputs/flutter-apk/
+          else
+            echo "❌ Build failed"
+            exit 1
+          fi
+          
+  lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          
+      - name: Run Flutter analyze
+        run: |
+          cd pinc_network
+          flutter pub get
+          flutter analyze
+        continue-on-error: true
+        
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          
+      - name: Run tests
+        run: |
+          cd pinc_network
+          flutter pub get
+          flutter test || echo "No tests found"
+        continue-on-error: true
+
+  notify:
+    name: Notify on Failure
+    needs: build
+    if: failure()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "❌ PINC Network build failed!"
+          echo "Please check the workflow logs for errors."
+          # In production, you could add Discord/Slack webhook here

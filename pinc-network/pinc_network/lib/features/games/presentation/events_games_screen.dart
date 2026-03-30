@@ -5,7 +5,8 @@ import '../../core/tracking/pinc_tracking_service.dart';
 import '../../core/events/pinc_events_service.dart';
 import '../../core/games/pinc_games_service.dart';
 
-/// Events & Games Home Screen
+/// Premium Events & Games Home Screen
+/// Modern design with smooth animations and premium feel
 class EventsGamesScreen extends ConsumerStatefulWidget {
   const EventsGamesScreen({super.key});
 
@@ -33,36 +34,156 @@ class _EventsGamesScreenState extends ConsumerState<EventsGamesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primaryDark,
-        title: const Text('Events & Games'),
-        bottom: TabBar(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildSliverAppBar(),
+        ],
+        body: TabBarView(
           controller: _tabController,
-          indicatorColor: AppTheme.accentCyan,
-          labelColor: AppTheme.accentCyan,
-          unselectedLabelColor: AppTheme.textSecondary,
-          tabs: const [
-            Tab(icon: Icon(Icons.event), text: 'Events'),
-            Tab(icon: Icon(Icons.sports_esports), text: 'Games'),
-            Tab(icon: Icon(Icons.emoji_events), text: 'Leagues'),
-            Tab(icon: Icon(Icons.track_changes), text: 'Tracking'),
+          children: const [
+            EventsTab(),
+            GamesTab(),
+            LeaguesTab(),
+            TrackingTab(),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          EventsTab(),
-          GamesTab(),
-          LeaguesTab(),
-          TrackingTab(),
+      floatingActionButton: _buildFAB(),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 140,
+      floating: true,
+      pinned: true,
+      backgroundColor: AppTheme.primaryDark,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0A0E14), Color(0xFF121820)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _buildStatCard('Events', '24', Icons.event),
+                      const SizedBox(width: 12),
+                      _buildStatCard('Players', '1.2K', Icons.people),
+                      const SizedBox(width: 12),
+                      _buildStatCard('PINC', '50K', Icons.monetization_on),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(48),
+        child: Container(
+          color: AppTheme.primaryDark,
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: AppTheme.accentCyan,
+            indicatorWeight: 3,
+            labelColor: AppTheme.accentCyan,
+            unselectedLabelColor: AppTheme.textSecondary,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            tabs: const [
+              Tab(icon: Icon(Icons.celebration), text: 'EVENTS'),
+              Tab(icon: Icon(Icons.sports_esports), text: 'GAMES'),
+              Tab(icon: Icon(Icons.emoji_events), text: 'LEAGUES'),
+              Tab(icon: Icon(Icons.shield), text: 'SECURITY'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.divider),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                gradient: AppTheme.accentGradient,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: AppTheme.primaryDark, size: 16),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAB() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.accentGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.accentCyan.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      child: FloatingActionButton.extended(
         onPressed: () => _showCreateOptions(context),
-        backgroundColor: AppTheme.accentCyan,
-        icon: const Icon(Icons.add, color: AppTheme.primaryDark),
-        label: const Text('Create', style: TextStyle(color: AppTheme.primaryDark)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        label: const Row(
+          children: [
+            Icon(Icons.add, color: AppTheme.primaryDark),
+            SizedBox(width: 8),
+            Text('Create', style: TextStyle(
+              color: AppTheme.primaryDark,
+              fontWeight: FontWeight.bold,
+            )),
+          ],
+        ),
       ),
     );
   }
@@ -70,392 +191,233 @@ class _EventsGamesScreenState extends ConsumerState<EventsGamesScreen>
   void _showCreateOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.secondaryDark,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Create New',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildCreateOption(
-              icon: Icons.event,
-              title: 'Global Event',
-              subtitle: 'Competition, tournament, or challenge',
-              onTap: () {
-                Navigator.pop(context);
-                _showCreateEventDialog(context);
-              },
-            ),
-            _buildCreateOption(
-              icon: Icons.sports_esports,
-              title: 'Game Match',
-              subtitle: 'Challenge friends to a game',
-              onTap: () {
-                Navigator.pop(context);
-                _showCreateGameDialog(context);
-              },
-            ),
-            _buildCreateOption(
-              icon: Icons.emoji_events,
-              title: 'League',
-              subtitle: 'Create a league up to 50 players',
-              onTap: () {
-                Navigator.pop(context);
-                _showCreateLeagueDialog(context);
-              },
-            ),
-            _buildCreateOption(
-              icon: Icons.attach_money,
-              title: 'Custom Bet',
-              subtitle: 'Bet with friends and family',
-              onTap: () {
-                Navigator.pop(context);
-                _showCreateBetDialog(context);
-              },
-            ),
-          ],
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _CreateOptionsSheet(),
     );
   }
+}
 
-  Widget _buildCreateOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppTheme.accentCyan.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: AppTheme.accentCyan),
+/// Custom Create Options Bottom Sheet
+class _CreateOptionsSheet extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppTheme.secondaryDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      title: Text(title, style: const TextStyle(color: AppTheme.textPrimary)),
-      subtitle: Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary)),
-      trailing: const Icon(Icons.arrow_forward_ios, color: AppTheme.textTertiary, size: 16),
-      onTap: onTap,
-    );
-  }
-
-  void _showCreateEventDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.secondaryDark,
-        title: const Text('Create Global Event', style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(labelText: 'Event Title'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.divider,
+              borderRadius: BorderRadius.circular(2),
             ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Description'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Entry Fee (PINC)'),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Max Participants'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Event created! All users notified.')),
-              );
-            },
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCreateGameDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.secondaryDark,
-        title: const Text('Start Game', style: TextStyle(color: AppTheme.textPrimary)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Select a game:', style: TextStyle(color: AppTheme.textSecondary)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildGameChip('Chess', '♔'),
-                _buildGameChip('Checkers', '⭕'),
-                _buildGameChip('Tetris', '🧱'),
-                _buildGameChip('Snake', '🐍'),
-                _buildGameChip('Pong', '🏓'),
-                _buildGameChip('Wordle', '📝'),
+                const Text(
+                  'Create Something New',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Choose what you want to create',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 24),
+                _buildOptionTile(context, Icons.celebration, const LinearGradient(colors: [Color(0xFF667eea), Color(0xFF764ba2)]), 'Global Event', 'Tournaments, competitions, challenges'),
+                _buildOptionTile(context, Icons.sports_esports, const LinearGradient(colors: [Color(0xFF11998e), Color(0xFF38ef7d)]), 'Game Match', 'Challenge friends to a game'),
+                _buildOptionTile(context, Icons.emoji_events, const LinearGradient(colors: [Color(0xFFf093fb), Color(0xFFf5576c)]), 'League', 'Create league up to 50 players'),
+                _buildOptionTile(context, Icons.attach_money, const LinearGradient(colors: [Color(0xFF4facfe), Color(0xFF00f2fe)]), 'Custom Bet', 'Bet with friends and family'),
               ],
             ),
-            const SizedBox(height: 16),
-            const TextField(
-              decoration: InputDecoration(labelText: 'Bet Amount (PINC)'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Game created! Waiting for opponent...')),
-              );
-            },
-            child: const Text('Create Match'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGameChip(String name, String icon) {
-    return ActionChip(
-      avatar: Text(icon),
-      label: Text(name),
-      backgroundColor: AppTheme.surfaceColor,
-      labelStyle: const TextStyle(color: AppTheme.textPrimary),
-      onPressed: () {},
-    );
-  }
-
-  void _showCreateLeagueDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.secondaryDark,
-        title: const Text('Create League', style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildOptionTile(BuildContext context, IconData icon, LinearGradient gradient, String title, String subtitle) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        _showCreateDialog(context, title);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
           children: [
-            TextField(
-              decoration: InputDecoration(labelText: 'League Name'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: gradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Game'),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                ],
+              ),
             ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Entry Fee (PINC)'),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Max Players (up to 50)'),
-              keyboardType: TextInputType.number,
-            ),
+            const Icon(Icons.arrow_forward_ios, color: AppTheme.textTertiary, size: 16),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('League created! Winners take all.')),
-              );
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showCreateBetDialog(BuildContext context) {
+  void _showCreateDialog(BuildContext context, String type) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: AppTheme.secondaryDark,
-        title: const Text('Create Custom Bet', style: TextStyle(color: AppTheme.textPrimary)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(labelText: 'Bet Question'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Option A'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Option B'),
-            ),
-            SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(labelText: 'Bet Amount (PINC)'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Create $type', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              const TextField(decoration: InputDecoration(labelText: 'Title')),
+              const SizedBox(height: 12),
+              const TextField(decoration: InputDecoration(labelText: 'Entry Fee (PINC)'), keyboardType: TextInputType.number),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
+                  const SizedBox(width: 12),
+                  Expanded(child: ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Create'))),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bet created! Share with friends.')),
-              );
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
 }
 
-/// Events Tab
+/// Events Tab with premium design
 class EventsTab extends StatelessWidget {
   const EventsTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Sample events data
     final events = [
-      {'title': 'Global Chess Tournament', 'players': '45/50', 'fee': '100 PINC', 'status': 'Active'},
-      {'title': 'Tetris High Score Challenge', 'players': '200+', 'fee': '10 PINC', 'status': 'Active'},
-      {'title': 'PINC League Season 1', 'players': '30/50', 'fee': '500 PINC', 'status': 'Starting Soon'},
+      {'title': 'Global Chess Championship', 'players': '45/50', 'fee': '500 PINC', 'prize': '10,000', 'status': 'Live'},
+      {'title': 'Tetris Speed Run', 'players': '234', 'fee': '25 PINC', 'prize': '2,500', 'status': 'Starting Soon'},
+      {'title': 'PINC League Season 3', 'players': '30/50', 'fee': '1,000 PINC', 'prize': '50,000', 'status': 'Registration'},
     ];
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: events.length,
+      itemCount: events.length + 1,
       itemBuilder: (context, index) {
-        final event = events[index];
-        return _buildEventCard(context, event);
+        if (index == 0) return _buildSectionHeader('Live Events');
+        return _buildEventCard(events[index - 1]);
       },
     );
   }
 
-  Widget _buildEventCard(BuildContext context, Map<String, String> event) {
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(title, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildEventCard(Map<String, String> event) {
+    Color statusColor = event['status'] == 'Live' ? AppTheme.success : AppTheme.warning;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        gradient: AppTheme.cardGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.divider),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentCyan.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(gradient: AppTheme.accentGradient, borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.emoji_events, color: AppTheme.primaryDark),
                 ),
-                child: const Icon(Icons.emoji_events, color: AppTheme.accentCyan),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event['title']!,
-                      style: const TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(event['title']!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text('${event['players']} • ', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                          Text(event['fee']!, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.people, size: 14, color: AppTheme.textTertiary),
-                        const SizedBox(width: 4),
-                        Text(
-                          event['players']!,
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.monetization_on, size: 14, color: AppTheme.textTertiary),
-                        const SizedBox(width: 4),
-                        Text(
-                          event['fee']!,
-                          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        ),
-                      ],
-                    ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
+                  child: Text(event['status']!, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(color: AppTheme.surfaceColor.withValues(alpha: 0.5), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.emoji_events, color: AppTheme.warning, size: 18),
+                    const SizedBox(width: 6),
+                    Text('Prize: ${event['prize']} PINC', style: const TextStyle(color: AppTheme.warning, fontWeight: FontWeight.w600)),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.success.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(gradient: AppTheme.accentGradient, borderRadius: BorderRadius.circular(20)),
+                  child: const Text('Join Now', style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.bold)),
                 ),
-                child: Text(
-                  event['status']!,
-                  style: const TextStyle(color: AppTheme.success, fontSize: 12),
-                ),
-              ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accentCyan,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: const Text('Join', style: TextStyle(color: AppTheme.primaryDark)),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -463,70 +425,93 @@ class EventsTab extends StatelessWidget {
   }
 }
 
-/// Games Tab
+/// Games Tab with premium design
 class GamesTab extends StatelessWidget {
   const GamesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     final games = [
-      {'name': 'Chess', 'icon': '♔', 'players': '1,234'},
-      {'name': 'Checkers', 'icon': '⭕', 'players': '856'},
-      {'name': 'Tetris', 'icon': '🧱', 'players': '2,456'},
-      {'name': 'Snake', 'icon': '🐍', 'players': '1,789'},
-      {'name': 'Pong', 'icon': '🏓', 'players': '543'},
-      {'name': 'Wordle', 'icon': '📝', 'players': '3,210'},
+      {'name': 'Chess', 'icon': '♔', 'players': '1,234', 'color': const Color(0xFF8B4513)},
+      {'name': 'Checkers', 'icon': '⭕', 'players': '856', 'color': const Color(0xFFDC143C)},
+      {'name': 'Tetris', 'icon': '🧱', 'players': '2,456', 'color': const Color(0xFF00CED1)},
+      {'name': 'Snake', 'icon': '🐍', 'players': '1,789', 'color': const Color(0xFF32CD32)},
+      {'name': 'Pong', 'icon': '🏓', 'players': '543', 'color': const Color(0xFFFF6347)},
+      {'name': 'Wordle', 'icon': '📝', 'players': '3,210', 'color': const Color(0xFFFFD700)},
     ];
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.2,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.85),
       itemCount: games.length,
       itemBuilder: (context, index) {
         final game = games[index];
-        return _buildGameCard(context, game);
+        final color = game['color'] as Color? ?? AppTheme.accentCyan;
+        return _buildGameCard(context, game, color);
       },
     );
   }
 
-  Widget _buildGameCard(BuildContext context, Map<String, String> game) {
+  Widget _buildGameCard(BuildContext context, Map<String, String> game, Color color) {
     return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showGameDialog(context, game),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: AppTheme.cardGradient,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.divider),
+          gradient: LinearGradient(colors: [color.withValues(alpha: 0.3), AppTheme.cardColor], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 5))],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              game['icon']!,
-              style: const TextStyle(fontSize: 40),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.2), shape: BoxShape.circle),
+              child: Text(game['icon']!, style: const TextStyle(fontSize: 40)),
             ),
-            const SizedBox(height: 8),
-            Text(
-              game['name']!,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${game['players']} players',
-              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+            const SizedBox(height: 16),
+            Text(game['name']!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text('${game['players']} players', style: TextStyle(color: color, fontSize: 12)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
+              child: Text('Play', style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showGameDialog(BuildContext context, Map<String, String> game) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: AppTheme.secondaryDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(game['icon']!, style: const TextStyle(fontSize: 60)),
+              const SizedBox(height: 16),
+              Text(game['name']!, style: const TextStyle(color: AppTheme.textPrimary, fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              const TextField(decoration: InputDecoration(labelText: 'Bet Amount (PINC)', prefixIcon: Icon(Icons.monetization_on))),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))),
+                  const SizedBox(width: 12),
+                  Expanded(child: ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Find Match'))),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -542,79 +527,65 @@ class LeaguesTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Active Leagues',
-          style: TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _buildLeagueCard(),
+        _buildFeaturedLeague(),
         const SizedBox(height: 24),
-        const Text(
-          'Create Your Own League',
-          style: TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        const Text('Your Leagues', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
+        _buildLeagueCard('Chess League', '12 players', '50 PINC'),
+        _buildLeagueCard('Tetris Masters', '8 players', '100 PINC'),
+        const SizedBox(height: 24),
         _buildCreateLeagueCard(context),
       ],
     );
   }
 
-  Widget _buildLeagueCard() {
+  Widget _buildFeaturedLeague() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.accentGradient,
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: AppTheme.accentCyan.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.emoji_events, color: AppTheme.primaryDark),
-              SizedBox(width: 8),
-              Text(
-                'PINC Championship',
-                style: TextStyle(
-                  color: AppTheme.primaryDark,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryDark.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.emoji_events, color: AppTheme.primaryDark, size: 28),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: AppTheme.primaryDark.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(20)),
+                child: const Text('FEATURED', style: TextStyle(color: AppTheme.primaryDark, fontWeight: FontWeight.bold, fontSize: 10)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Text(
-            '50 Players • 5,000 PINC Prize Pool',
-            style: TextStyle(color: AppTheme.primaryDark, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          const Text('PINC Championship', style: TextStyle(color: AppTheme.primaryDark, fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('50 Players • Winners Take All', style: TextStyle(color: AppTheme.primaryDark, fontSize: 14)),
+          const SizedBox(height: 16),
           Row(
             children: [
-              _buildLeagueStat('Players', '32/50'),
-              const SizedBox(width: 16),
-              _buildLeagueStat('Entry', '100 PINC'),
-              const SizedBox(width: 16),
-              _buildLeagueStat('Ends', '7 days'),
+              _buildStat('Prize', '50,000 PINC'),
+              const SizedBox(width: 24),
+              _buildStat('Players', '32/50'),
+              const SizedBox(width: 24),
+              _buildStat('Ends', '7 days'),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryDark,
-              ),
-              child: const Text('Join League', style: TextStyle(color: AppTheme.accentCyan)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryDark, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: const Text('Join Championship', style: TextStyle(color: AppTheme.accentCyan, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -622,56 +593,65 @@ class LeaguesTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLeagueStat(String label, String value) {
+  Widget _buildStat(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(color: AppTheme.primaryDark, fontSize: 10),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.primaryDark,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(label, style: TextStyle(color: AppTheme.primaryDark.withValues(alpha: 0.7), fontSize: 11)),
+        Text(value, style: const TextStyle(color: AppTheme.primaryDark, fontSize: 14, fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  Widget _buildLeagueCard(String name, String players, String fee) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppTheme.cardColor, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppTheme.accentCyan.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.emoji_events, color: AppTheme.accentCyan),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
+                Text('$players • $fee', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppTheme.textTertiary),
+        ],
+      ),
     );
   }
 
   Widget _buildCreateLeagueCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.accentCyan, style: BorderStyle.solid),
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.accentCyan.withValues(alpha: 0.5), width: 2),
       ),
       child: Column(
         children: [
           const Icon(Icons.add_circle_outline, color: AppTheme.accentCyan, size: 40),
           const SizedBox(height: 12),
-          const Text(
-            'Create League',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Create Your Own League', style: TextStyle(color: AppTheme.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text(
-            'Up to 50 players • Winners take all',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
+          const Text('Up to 50 players • Winners take all', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12), textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
             onPressed: () {},
-            child: const Text('Create Now'),
+            icon: const Icon(Icons.add),
+            label: const Text('Create League'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentCyan, foregroundColor: AppTheme.primaryDark, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
           ),
         ],
       ),
@@ -679,194 +659,98 @@ class LeaguesTab extends StatelessWidget {
   }
 }
 
-/// Tracking Tab
+/// Tracking/Security Tab
 class TrackingTab extends ConsumerWidget {
   const TrackingTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tracking = ref.watch(PincTrackingService().isTrackingEnabled ? Provider() : Provider());
-    
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Status Card
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: AppTheme.cardGradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(gradient: AppTheme.cardGradient, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppTheme.divider)),
           child: Column(
             children: [
-              const Icon(Icons.location_on, color: AppTheme.accentCyan, size: 40),
-              const SizedBox(height: 12),
-              const Text(
-                'Device Tracking',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your device is protected. Track location if lost.',
-                style: TextStyle(color: AppTheme.textSecondary),
-                textAlign: TextAlign.center,
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(gradient: AppTheme.accentGradient, shape: BoxShape.circle),
+                child: const Icon(Icons.shield, color: AppTheme.primaryDark, size: 40),
               ),
               const SizedBox(height: 16),
+              const Text('Device Security', style: TextStyle(color: AppTheme.textPrimary, fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('Your device is protected. Track location if lost.', style: TextStyle(color: AppTheme.textSecondary), textAlign: TextAlign.center),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildTrackingButton(
-                    icon: Icons.lock,
-                    label: 'Lock',
-                    onTap: () {},
-                  ),
-                  _buildTrackingButton(
-                    icon: Icons.volume_up,
-                    label: 'Alarm',
-                    onTap: () {},
-                  ),
-                  _buildTrackingButton(
-                    icon: Icons.delete_forever,
-                    label: 'Wipe',
-                    onTap: () {},
-                  ),
+                  _buildSecurityButton(Icons.lock, 'Lock'),
+                  _buildSecurityButton(Icons.volume_up, 'Alarm'),
+                  _buildSecurityButton(Icons.camera_alt, 'Capture'),
+                  _buildSecurityButton(Icons.delete_forever, 'Wipe'),
                 ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        
-        // Anti-Theft Features
-        const Text(
-          'Anti-Theft Features',
-          style: TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        const Text('Anti-Theft Features', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        _buildFeatureTile(
-          icon: Icons.power_settings_new,
-          title: 'Shutdown Protection',
-          subtitle: 'Prevent device from being turned off',
-          enabled: true,
-        ),
-        _buildFeatureTile(
-          icon: Icons.gps_fixed,
-          title: 'Location Tracking',
-          subtitle: 'Track device location in real-time',
-          enabled: true,
-        ),
-        _buildFeatureTile(
-          icon: Icons.camera_alt,
-          title: 'Remote Photo',
-          subtitle: 'Take photo to identify thief',
-          enabled: true,
-        ),
-        _buildFeatureTile(
-          icon: Icons.message,
-          title: 'Display Message',
-          subtitle: 'Show message on lock screen',
-          enabled: true,
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Movement History
-        const Text(
-          'Movement Map',
-          style: TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          height: 150,
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map, color: AppTheme.textTertiary, size: 40),
-                SizedBox(height: 8),
-                Text(
-                  'Movement data will appear here',
-                  style: TextStyle(color: AppTheme.textTertiary),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildFeatureCard(Icons.power_settings_new, 'Shutdown Protection', 'Device cannot be turned off without PIN', true),
+        _buildFeatureCard(Icons.gps_fixed, 'Location Tracking', 'Real-time location updates', true),
+        _buildFeatureCard(Icons.map, 'Movement Map', 'View movement history', true),
+        _buildFeatureCard(Icons.camera_alt, 'Remote Photo', 'Capture photo to identify thief', true),
+        _buildFeatureCard(Icons.message, 'Display Message', 'Show message on lock screen', true),
       ],
     );
   }
 
-  Widget _buildTrackingButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.accentCyan),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          ],
-        ),
+  Widget _buildSecurityButton(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppTheme.surfaceColor, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppTheme.error.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: AppTheme.error),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+        ],
       ),
     );
   }
 
-  Widget _buildFeatureTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool enabled,
-  }) {
+  Widget _buildFeatureCard(IconData icon, String title, String subtitle, bool enabled) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppTheme.cardColor, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.accentCyan),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppTheme.accentCyan.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: AppTheme.accentCyan),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: AppTheme.textPrimary)),
+                Text(title, style: const TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.w600)),
                 Text(subtitle, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
               ],
             ),
           ),
-          Switch(
-            value: enabled,
-            onChanged: (value) {},
-            activeColor: AppTheme.accentCyan,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: enabled ? AppTheme.success.withValues(alpha: 0.2) : AppTheme.error.withValues(alpha: 0.2), shape: BoxShape.circle),
+            child: Icon(enabled ? Icons.check : Icons.close, color: enabled ? AppTheme.success : AppTheme.error, size: 16),
           ),
         ],
       ),
