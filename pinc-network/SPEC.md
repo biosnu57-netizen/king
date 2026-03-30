@@ -48,6 +48,12 @@ The creator envisioned this platform while in Kenya (using Saficom) asking:
 | **Screen Sharing** | Free screen sharing capabilities |
 | **Remote Jobs** | Find and apply for remote work |
 | **Betting System** | Create bets and challenges |
+| **Device Tracking** | Track lost/stolen device, prevent shutdown |
+| **Movement Mapping** | Map user movement and places visited |
+| **Global Events** | Create global events, notify all users |
+| **Gaming Platform** | Chess, Checkers, Tetris, and more |
+| **Leagues** | Create leagues up to 50 players |
+| **Custom Bets** | Bet with friends and family |
 
 ---
 
