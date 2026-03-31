@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <defs>
+    <linearGradient id="pincGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00FF94;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D4AA;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0E14;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A2028;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Ring -->
+  <circle cx="256" cy="256" r="240" fill="url(#pincGradient)"/>
+  
+  <!-- Inner Dark Circle -->
+  <circle cx="256" cy="256" r="200" fill="url(#innerGlow)"/>
+  
+  <!-- P Letter -->
+  <path d="M180 140 L180 360 L240 360 L240 280 L300 280 L300 220 L240 220 L240 180 L320 180 L320 140 L180 140 Z" fill="url(#pincGradient)"/>
+  
+  <!-- IN Letters -->
+  <text x="180" y="420" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#00D4AA">IN</text>
+  <text x="290" y="420" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="#00FF94">C</text>
+  
+  <!-- Network Nodes -->
+  <circle cx="256" cy="100" r="15" fill="#00D4AA" opacity="0.8"/>
+  <circle cx="100" cy="200" r="15" fill="#00FF94" opacity="0.8"/>
+  <circle cx="412" cy="200" r="15" fill="#00D4AA" opacity="0.8"/>
+  <circle cx="80" cy="380" r="15" fill="#00FF94" opacity="0.8"/>
+  <circle cx="432" cy="380" r="15" fill="#00D4AA" opacity="0.8"/>
+  
+  <!-- Connection Lines -->
+  <line x1="256" y1="100" x2="100" y2="200" stroke="#00D4AA" stroke-width="2" opacity="0.5"/>
+  <line x1="256" y1="100" x2="412" y2="200" stroke="#00FF94" stroke-width="2" opacity="0.5"/>
+  <line x1="100" y1="200" x2="80" y2="380" stroke="#00D4AA" stroke-width="2" opacity="0.5"/>
+  <line x1="412" y1="200" x2="432" y2="380" stroke="#00FF94" stroke-width="2" opacity="0.5"/>
+  <line x1="100" y1="200" x2="412" y2="200" stroke="#00D4AA" stroke-width="2" opacity="0.3"/>
+  <line x1="80" y1="380" x2="432" y2="380" stroke="#00FF94" stroke-width="2" opacity="0.3"/>
+</svg>

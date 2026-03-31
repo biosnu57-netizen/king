@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _tabs = const [
     VpnTab(),
     WalletTab(),
-    CommunityTab(),
+    ChatTab(),
     JobsTab(),
     GamesTab(),
     ProfileTab(),
@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.shield), label: 'VPN'),
           BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
           BottomNavigationBarItem(icon: Icon(Icons.sports_esports), label: 'Games'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
@@ -69,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ==================== VPN TAB ====================
 class VpnTab extends StatelessWidget {
   const VpnTab({super.key});
 
@@ -93,6 +94,8 @@ class VpnTab extends StatelessWidget {
             const Text('P2P Mesh Network', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text('8-thread parallel processing', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 8),
+            const Text('IP stays hidden • No data access to host', style: TextStyle(color: Color(0xFF00D4AA), fontSize: 12)),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {},
@@ -109,6 +112,7 @@ class VpnTab extends StatelessWidget {
   }
 }
 
+// ==================== WALLET TAB ====================
 class WalletTab extends StatelessWidget {
   const WalletTab({super.key});
 
@@ -117,37 +121,61 @@ class WalletTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('PINC Wallet'), backgroundColor: const Color(0xFF0A0E14)),
       backgroundColor: const Color(0xFF0A0E14),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Balance', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 8),
-            const Text('0.00 PINC', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 32),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Column(
+                children: [
+                  Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
+                  SizedBox(height: 8),
+                  Text('0.00 PINC', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 32, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text('≈ \$0.00 USD', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildActionButton(Icons.upload, 'Send'),
-                _buildActionButton(Icons.download, 'Receive'),
-                _buildActionButton(Icons.swap_horiz, 'Swap'),
+                _walletAction(Icons.upload, 'Send'),
+                _walletAction(Icons.download, 'Receive'),
+                _walletAction(Icons.swap_horiz, 'Swap'),
               ],
             ),
+            const SizedBox(height: 24),
+            const Align(alignment: Alignment.centerLeft, child: Text('Deposit/Withdraw', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+            const SizedBox(height: 12),
+            _walletTile(Icons.credit_card, 'Credit Card', 'Via agents'),
+            _walletTile(Icons.paid, 'P2P Agents', 'Country-based'),
+            _walletTile(Icons.account_balance, 'PayPal', 'Third-party'),
+            const SizedBox(height: 24),
+            const Align(alignment: Alignment.centerLeft, child: Text('Transfer Types', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+            const SizedBox(height: 12),
+            _transferCard('1', 'Subscription', 'Recurring', const Color(0xFF667eea)),
+            _transferCard('2', 'Wagers/Challenges', 'Gaming escrow', const Color(0xFFf093fb)),
+            _transferCard('3', 'Savings', 'Protected', const Color(0xFF11998e)),
+            _transferCard('4', 'Service Payment', 'Jobs/freelance', const Color(0xFF4facfe)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label) {
+  Widget _walletAction(IconData icon, String label) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A2028),
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: const Color(0xFF00D4AA)),
         ),
         const SizedBox(height: 8),
@@ -155,76 +183,150 @@ class WalletTab extends StatelessWidget {
       ],
     );
   }
-}
 
-class CommunityTab extends StatelessWidget {
-  const CommunityTab({super.key});
+  Widget _walletTile(IconData icon, String title, String sub) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF00D4AA))),
+          const SizedBox(width: 16),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), Text(sub, style: const TextStyle(color: Colors.grey, fontSize: 12))])),
+          const Icon(Icons.chevron_right, color: Colors.grey),
+        ],
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Community'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: const Center(child: Text('Community features', style: TextStyle(color: Colors.grey))),
+  Widget _transferCard(String n, String t, String s, Color c) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12), border: Border.all(color: c.withOpacity(0.3))),
+      child: Row(children: [
+        Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withOpacity(0.2), borderRadius: BorderRadius.circular(10)), child: Center(child: Text(n, style: TextStyle(color: c, fontWeight: FontWeight.bold)))),
+        const SizedBox(width: 16),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)), Text(s, style: const TextStyle(color: Colors.grey, fontSize: 12))])),
+      ]),
     );
   }
 }
 
-class JobsTab extends StatelessWidget {
-  const JobsTab({super.key});
+// ==================== CHAT TAB ====================
+class ChatTab extends StatelessWidget {
+  const ChatTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Remote Jobs'), backgroundColor: const Color(0xFF0A0E14)),
+      appBar: AppBar(title: const Text('Chats'), backgroundColor: const Color(0xFF0A0E14), actions: const [IconButton(icon: Icon(Icons.call), onPressed: null), IconButton(icon: Icon(Icons.video_call), onPressed: null)]),
       backgroundColor: const Color(0xFF0A0E14),
-      body: const Center(child: Text('Jobs marketplace', style: TextStyle(color: Colors.grey))),
-    );
-  }
-}
-
-class GamesTab extends StatelessWidget {
-  const GamesTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final games = [
-      {'name': 'Chess', 'icon': '♔'},
-      {'name': 'Checkers', 'icon': '⭕'},
-      {'name': 'Tetris', 'icon': '🧱'},
-      {'name': 'Snake', 'icon': '🐍'},
-      {'name': 'Pong', 'icon': '🏓'},
-      {'name': 'Wordle', 'icon': '📝'},
-    ];
-    
-    return Scaffold(
-      appBar: AppBar(title: const Text('Games'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12),
-        itemCount: games.length,
-        itemBuilder: (context, index) {
-          return Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A2028),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(games[index]['icon']!, style: const TextStyle(fontSize: 40)),
-                const SizedBox(height: 8),
-                Text(games[index]['name']!, style: const TextStyle(color: Colors.white)),
-              ],
-            ),
-          );
-        },
+      floatingActionButton: FloatingActionButton(backgroundColor: const Color(0xFF00D4AA), onPressed: () {}, child: const Icon(Icons.edit, color: Color(0xFF0A0E14))),
+      body: ListView(
+        children: const [
+          ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('A', style: TextStyle(color: Color(0xFF0A0E14)))), title: Text('Alice', style: TextStyle(color: Colors.white)), subtitle: Text('Hey! How are you?', style: TextStyle(color: Colors.grey)), trailing: Text('2:34 PM', style: TextStyle(color: Colors.grey))),
+          ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('B', style: TextStyle(color: Color(0xFF0A0E14)))), title: Text('Bob', style: TextStyle(color: Colors.white)), subtitle: Text('Project ready', style: TextStyle(color: Colors.grey)), trailing: Text('1:20 PM', style: TextStyle(color: Colors.grey))),
+          ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('P', style: TextStyle(color: Color(0xFF0A0E14)))), title: Text('PINC Group', style: TextStyle(color: Colors.white)), subtitle: Text('New members joined', style: TextStyle(color: Colors.grey)), trailing: Text('12:45 PM', style: TextStyle(color: Colors.grey))),
+        ],
       ),
     );
   }
 }
 
+// ==================== JOBS TAB ====================
+class JobsTab extends StatelessWidget {
+  const JobsTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Remote Jobs'), backgroundColor: const Color(0xFF0A0E14), bottom: const TabBar(labelColor: Color(0xFF00D4AA), unselectedLabelColor: Colors.grey, indicatorColor: Color(0xFF00D4AA), tabs: [Tab(text: 'Find'), Tab(text: 'My Jobs'), Tab(text: 'Post')])),
+        backgroundColor: const Color(0xFF0A0E14),
+        body: TabBarView(children: [_jobsList(), const Center(child: Text('No jobs yet', style: TextStyle(color: Colors.grey))), _postJobForm()]),
+      ),
+    );
+  }
+
+  Widget _jobsList() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _jobCard('Full Stack Developer', '500-1000 PINC', '5 needed', 'Software'),
+        _jobCard('UI/UX Designer', '300-500 PINC', '2 needed', 'Design'),
+        _jobCard('Content Writer', '100-200 PINC', '1 needed', 'Writing'),
+      ],
+    );
+  }
+
+  Widget _jobCard(String title, String budget, String workers, String type) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(4)), child: Text(type, style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 12))), const Spacer(), Text(budget, style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold))]),
+          const SizedBox(height: 12),
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(workers, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 12),
+          Row(children: [Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('View'))), const SizedBox(width: 12), Expanded(child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA)), child: const Text('Bid', style: TextStyle(color: Color(0xFF0A0E14)))))])
+        ],
+      ),
+    );
+  }
+
+  Widget _postJobForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(children: [
+        TextField(style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: 'Job Title', filled: true, fillColor: const Color(0xFF1A2028), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)))),
+        const SizedBox(height: 16),
+        TextField(maxLines: 4, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: 'Description', filled: true, fillColor: const Color(0xFF1A2028), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+        const SizedBox(height: 16),
+        TextField(style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: 'Budget (PINC)', filled: true, fillColor: const Color(0xFF1A2028), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+        const SizedBox(height: 16),
+        ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)), child: const Text('Post Job (Escrow)', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold))),
+      ]),
+    );
+  }
+}
+
+// ==================== GAMES TAB ====================
+class GamesTab extends StatelessWidget {
+  const GamesTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Games'), backgroundColor: const Color(0xFF0A0E14)),
+      backgroundColor: const Color(0xFF0A0E14),
+      floatingActionButton: FloatingActionButton.extended(backgroundColor: const Color(0xFF00D4AA), onPressed: () {}, icon: const Icon(Icons.add, color: Color(0xFF0A0E14)), label: const Text('Challenge', style: TextStyle(color: Color(0xFF0A0E14)))),
+      body: GridView.count(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, padding: const EdgeInsets.all(16), children: [
+        _gameTile('Chess', '♔', '1,234'),
+        _gameTile('Checkers', '⭕', '856'),
+        _gameTile('Tetris', '🧱', '2,456'),
+        _gameTile('Snake', '🐍', '1,789'),
+        _gameTile('Pong', '🏓', '543'),
+        _gameTile('Wordle', '📝', '3,210'),
+      ]),
+    );
+  }
+
+  Widget _gameTile(String name, String icon, String players) {
+    return Container(
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Text(icon, style: const TextStyle(fontSize: 40)), const SizedBox(height: 8), Text(name, style: const TextStyle(color: Colors.white)), Text('$players players', style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 12))]),
+    );
+  }
+}
+
+// ==================== PROFILE TAB ====================
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
 
@@ -233,39 +335,37 @@ class ProfileTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile'), backgroundColor: const Color(0xFF0A0E14)),
       backgroundColor: const Color(0xFF0A0E14),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14)),
-            ),
-            const SizedBox(height: 16),
-            const Text('User', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.verified, color: Colors.green, size: 16),
-                  SizedBox(width: 4),
-                  Text('6-Phase Security Active', style: TextStyle(color: Colors.green, fontSize: 12)),
-                ],
-              ),
-            ),
-          ],
-        ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          Container(padding: const EdgeInsets.all(24), decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), shape: BoxShape.circle), child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14))),
+          const SizedBox(height: 16),
+          const Text('User', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(20)), child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.verified, color: Colors.green, size: 16), SizedBox(width: 4), Text('6-Phase Security', style: TextStyle(color: Colors.green, fontSize: 12))])),
+          const SizedBox(height: 24),
+          _profileItem(Icons.shield, 'Security'),
+          _profileItem(Icons.forum, 'Forums'),
+          _profileItem(Icons.settings, 'Settings'),
+          _profileItem(Icons.help, 'Help'),
+          _profileItem(Icons.info, 'About'),
+        ]),
       ),
+    );
+  }
+
+  Widget _profileItem(IconData icon, String title) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: const Color(0xFF00D4AA))),
+        const SizedBox(width: 16),
+        Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        const Icon(Icons.chevron_right, color: Colors.grey),
+      ]),
     );
   }
 }
