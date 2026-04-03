@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:convert';
+import 'dart:typed_data';
 
 void main() => runApp(const PincNetworkApp());
 
+// ==================== MAIN APP ====================
 class PincNetworkApp extends StatelessWidget {
   const PincNetworkApp({super.key});
 
@@ -11,12 +14,211 @@ class PincNetworkApp extends StatelessWidget {
     return MaterialApp(
       title: 'PINC Network',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(scaffoldBackgroundColor: const Color(0xFF0A0E14)),
-      home: const HomeScreen(),
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF0A0E14),
+        primaryColor: const Color(0xFF00D4AA),
+      ),
+      home: const AuthenticationWrapper(),
     );
   }
 }
 
+// ==================== AUTHENTICATION ====================
+class AuthenticationWrapper extends StatefulWidget {
+  const AuthenticationWrapper({super.key});
+
+  @override
+  State<AuthenticationWrapper> createState() => _AuthenticationWrapperState();
+}
+
+class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
+  bool _isLoggedIn = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      _isLoading = false;
+      // Change to true to test authenticated state
+      _isLoggedIn = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0A0E14),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00D4AA))),
+      );
+    }
+    if (!_isLoggedIn) {
+      return const LoginScreen();
+    }
+    return const HomeScreen();
+  }
+}
+
+// ==================== LOGIN SCREEN ====================
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _phoneController = TextEditingController();
+  bool _isVerifying = false;
+  String _verificationStatus = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0E14),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              // Logo
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.shield, size: 50, color: Color(0xFF0A0E14)),
+              ),
+              const SizedBox(height: 24),
+              const Text('PINC Network', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+              const Text('Decentralized Privacy Platform', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 48),
+
+              // Phone Login
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Phone Number Verification', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('1 account = 1 phone number\nAnonymous transactions enabled', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        labelText: '+254...',
+                        hintText: 'Enter phone number',
+                        filled: true,
+                        fillColor: const Color(0xFF0A0E14),
+                        prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF00D4AA)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isVerifying ? null : _verifyPhone,
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
+                        child: _isVerifying
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0E14)))
+                            : const Text('Verify & Create Account', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    if (_verificationStatus.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(_verificationStatus, style: TextStyle(color: _verificationStatus.contains('✅') ? Colors.green : Colors.red)),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Geo-verification info
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.location_on, color: Color(0xFF00D4AA), size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Geo-Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ]),
+                    const SizedBox(height: 8),
+                    const Text('• Location verified for 1 account per phone\n• IP anonymized\n• Transactions untraceable', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Anti-fraud info
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.security, color: Color(0xFF00D4AA), size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Anti-Fraud & Anti-Hack', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ]),
+                    const SizedBox(height: 8),
+                    const Text('• Device fingerprinting\n• SIM change detection\n• Anti-tampering protection\n• Secure enclave', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _verifyPhone() async {
+    if (_phoneController.text.isEmpty || _phoneController.text.length < 10) {
+      setState(() => _verificationStatus = 'Please enter valid phone number');
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+      _verificationStatus = '';
+    });
+
+    // Simulate verification
+    await Future.delayed(const Duration(seconds: 2));
+
+    setState(() {
+      _isVerifying = false;
+      _verificationStatus = '✅ Account created! One-time setup complete.';
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    }
+  }
+}
+
+// ==================== HOME SCREEN ====================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -65,33 +267,113 @@ class VpnTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PINC VPN'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: const Icon(Icons.shield, size: 60, color: Color(0xFF0A0E14)),
-            ),
-            const SizedBox(height: 24),
-            const Text('P2P Mesh Network', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('8-thread parallel processing', style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA)),
-              child: const Text('Connect', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text('PINC VPN'),
+        backgroundColor: const Color(0xFF0A0E14),
+        actions: [
+          IconButton(icon: const Icon(Icons.settings), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VpnSettingsPage()))),
+        ],
       ),
+      backgroundColor: const Color(0xFF0A0E14),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          // Connection Status
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(children: [
+              const Icon(Icons.shield, size: 50, color: Color(0xFF0A0E14)),
+              const SizedBox(height: 8),
+              const Text('P2P Mesh Network', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('8-thread parallel processing', style: TextStyle(color: Color(0xFF0A0E14))),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // Connection Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
+              child: const Text('Connect', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold, fontSize: 18)),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Node Info
+          _infoCard('Network Nodes', '12,453 active nodes'),
+          _infoCard('Your IP', 'Protected • Hidden'),
+          _infoCard('Encryption', 'AES-256 + Triple Layer'),
+          _infoCard('Speed Ranking', '#47 in your region'),
+        ]),
+      ),
+    );
+  }
+
+  Widget _infoCard(String title, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        const Icon(Icons.info_outline, color: Color(0xFF00D4AA)),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ])),
+      ]),
+    );
+  }
+}
+
+class VpnSettingsPage extends StatelessWidget {
+  const VpnSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('VPN Settings'), backgroundColor: const Color(0xFF0A0E14)),
+      backgroundColor: const Color(0xFF0A0E14),
+      body: ListView(padding: const EdgeInsets.all(16), children: const [
+        Text('Node Settings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 16),
+        _SettingTile('Auto-connect', true),
+        _SettingTile('Split Tunneling', false),
+        _SettingTile('Kill Switch', true),
+        _SettingTile('Multi-hop Routing', false),
+        SizedBox(height: 24),
+        Text('Upload/Download', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        SizedBox(height: 16),
+        _SettingTile('Compression', true),
+        _SettingTile('Encryption Level', true),
+        _SettingTile('Data Saving Mode', false),
+      ]),
+    );
+  }
+}
+
+class _SettingTile extends StatelessWidget {
+  final String title;
+  final bool value;
+  const _SettingTile(this.title, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(8)),
+      child: Row(children: [
+        Text(title, style: const TextStyle(color: Colors.white)),
+        const Spacer(),
+        Switch(value: value, onChanged: (v) {}, activeColor: const Color(0xFF00D4AA)),
+      ]),
     );
   }
 }
@@ -103,11 +385,18 @@ class WalletTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PINC Wallet'), backgroundColor: const Color(0xFF0A0E14)),
+      appBar: AppBar(
+        title: const Text('PINC Wallet'),
+        backgroundColor: const Color(0xFF0A0E14),
+        actions: [
+          IconButton(icon: const Icon(Icons.history), onPressed: () {}),
+        ],
+      ),
       backgroundColor: const Color(0xFF0A0E14),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
+          // Balance Card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
@@ -115,44 +404,77 @@ class WalletTab extends StatelessWidget {
               gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Column(children: [
-              Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
-              SizedBox(height: 8),
-              Text('0.00 PINC', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 32, fontWeight: FontWeight.bold)),
+            child: Column(children: [
+              const Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
+              const SizedBox(height: 8),
+              const Text('0.00 PINC', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.lock, size: 14, color: Color(0xFF0A0E14)),
+                const SizedBox(width: 4),
+                const Text('Encrypted • Private', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 12)),
+              ]),
             ]),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _walletAction(Icons.upload, 'Send'),
-              _walletAction(Icons.download, 'Receive'),
-              _walletAction(Icons.swap_horiz, 'Swap'),
-            ],
-          ),
+
+          // Actions
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _action(Icons.upload, 'Send'),
+            _action(Icons.download, 'Receive'),
+            _action(Icons.swap_horiz, 'Swap'),
+            _action(Icons.analytics, 'Trade'),
+          ]),
           const SizedBox(height: 24),
+
+          // P2P Market Verification
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.verified_user, color: Color(0xFF00D4AA)),
+                const SizedBox(width: 8),
+                const Text('P2P Market Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ]),
+              const SizedBox(height: 8),
+              const Text('• Transaction verification system\n• Papa Business verification\n• Escrow automatic release\n• Dispute resolution AI', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Verify'))),
+                const SizedBox(width: 12),
+                Expanded(child: ElevatedButton(onPressed: () {}, child: const Text('Create Escrow'))),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 16),
+
+          // Deposit Methods
+          const Align(alignment: Alignment.centerLeft, child: Text('Deposit/Withdraw', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 12),
           _tile(Icons.credit_card, 'Credit Card', 'Via agents'),
           _tile(Icons.paid, 'P2P Agents', 'Country-based'),
           _tile(Icons.account_balance, 'PayPal', 'Third-party'),
-          const SizedBox(height: 24),
+          _tile(Icons.storefront, 'Papa Business', 'Verified shops'),
+          const SizedBox(height: 16),
+
+          // Transfer Types
           const Align(alignment: Alignment.centerLeft, child: Text('Transfer Types', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
           const SizedBox(height: 12),
           _transferCard('1', 'Subscription', 'Recurring', const Color(0xFF667eea)),
-          _transferCard('2', 'Wagers', 'Gaming escrow', const Color(0xFFf093fb)),
+          _transferCard('2', 'Wagers/Challenges', 'Gaming', const Color(0xFFf093fb)),
           _transferCard('3', 'Savings', 'Protected', const Color(0xFF11998e)),
-          _transferCard('4', 'Service Payment', 'Jobs/freelance', const Color(0xFF4facfe)),
+          _transferCard('4', 'Service Payment', 'Jobs/Freelance', const Color(0xFF4facfe)),
+          _transferCard('5', 'Papa Business', 'Verified', const Color(0xFF00D4AA)),
         ]),
       ),
     );
   }
 
-  Widget _walletAction(IconData icon, String label) {
+  Widget _action(IconData icon, String label) {
     return Column(children: [
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-        child: Icon(icon, color: const Color(0xFF00D4AA)),
-      ),
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+        child: Icon(icon, color: const Color(0xFF00D4AA))),
       const SizedBox(height: 8),
       Text(label, style: const TextStyle(color: Colors.grey)),
     ]);
@@ -164,11 +486,8 @@ class WalletTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: const Color(0xFF00D4AA)),
-        ),
+        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: const Color(0xFF00D4AA))),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
@@ -207,18 +526,16 @@ class ChatTab extends StatelessWidget {
       appBar: AppBar(title: const Text('Chats'), backgroundColor: const Color(0xFF0A0E14),
         actions: const [IconButton(icon: Icon(Icons.call), onPressed: null), IconButton(icon: Icon(Icons.video_call), onPressed: null)]),
       backgroundColor: const Color(0xFF0A0E14),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF00D4AA), onPressed: () {},
-        child: const Icon(Icons.edit, color: Color(0xFF0A0E14)),
-      ),
+      floatingActionButton: FloatingActionButton(backgroundColor: const Color(0xFF00D4AA), onPressed: () {},
+        child: const Icon(Icons.edit, color: Color(0xFF0A0E14))),
       body: ListView(children: const [
         ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('A', style: TextStyle(color: Color(0xFF0A0E14)))),
           title: Text('Alice', style: TextStyle(color: Colors.white)),
-          subtitle: Text('Hey! How are you?', style: TextStyle(color: Colors.grey)),
+          subtitle: Text('Encrypted message...', style: TextStyle(color: Colors.grey)),
           trailing: Text('2:34 PM', style: TextStyle(color: Colors.grey))),
         ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('B', style: TextStyle(color: Color(0xFF0A0E14)))),
-          title: Text('Bob (Work)', style: TextStyle(color: Colors.white)),
-          subtitle: Text('Project ready', style: TextStyle(color: Colors.grey)),
+          title: Text('Papa Business', style: TextStyle(color: Colors.white)),
+          subtitle: Text('Verified ✓', style: TextStyle(color: Color(0xFF00D4AA))),
           trailing: Text('1:20 PM', style: TextStyle(color: Colors.grey))),
       ]),
     );
@@ -232,13 +549,13 @@ class JobsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(title: const Text('Remote Jobs'), backgroundColor: const Color(0xFF0A0E14),
           bottom: const TabBar(labelColor: Color(0xFF00D4AA), indicatorColor: Color(0xFF00D4AA),
-            tabs: [Tab(text: 'Find Jobs'), Tab(text: 'My Jobs'), Tab(text: 'Post Job')])),
+            tabs: [Tab(text: 'Find'), Tab(text: 'My Jobs'), Tab(text: 'Post'), Tab(text: 'PapaBiz')])),
         backgroundColor: const Color(0xFF0A0E14),
-        body: const TabBarView(children: [_FindJobsView(), _MyJobsView(), _PostJobView()]),
+        body: const TabBarView(children: [_FindJobsView(), _MyJobsView(), _PostJobView(), _PapaBizView()]),
       ),
     );
   }
@@ -253,6 +570,7 @@ class _FindJobsView extends StatelessWidget {
       _jobCard('Full Stack Developer', '500-1000 PINC', '5 needed', 'Software'),
       _jobCard('UI/UX Designer', '300-500 PINC', '2 needed', 'Design'),
       _jobCard('Content Writer', '100-200 PINC', '1 needed', 'Writing'),
+      _jobCard('Video Editor', '200-400 PINC', '3 needed', 'Media'),
     ]);
   }
 
@@ -286,16 +604,12 @@ class _FindJobsView extends StatelessWidget {
 
 class _MyJobsView extends StatelessWidget {
   const _MyJobsView();
-
   @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('No active jobs yet', style: TextStyle(color: Colors.grey)));
-  }
+  Widget build(BuildContext context) => const Center(child: Text('No active jobs', style: TextStyle(color: Colors.grey)));
 }
 
 class _PostJobView extends StatelessWidget {
   const _PostJobView();
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
@@ -309,7 +623,30 @@ class _PostJobView extends StatelessWidget {
   }
 }
 
-// ==================== GAMES HUB TAB WITH 6 PLAYABLE GAMES ====================
+class _PapaBizView extends StatelessWidget {
+  const _PapaBizView();
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.store, color: Color(0xFF00D4AA)),
+            const SizedBox(width: 8),
+            const Text('Papa Business Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: 8),
+          const Text('Verified local businesses can receive payments directly', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA)),
+            child: const Text('Register Business', style: TextStyle(color: Color(0xFF0A0E14)))),
+        ]),
+      ),
+    ]);
+  }
+}
+
+// ==================== GAMES HUB TAB ====================
 class GamesHubTab extends StatelessWidget {
   const GamesHubTab({super.key});
 
@@ -324,20 +661,62 @@ class GamesHubTab extends StatelessWidget {
         icon: const Icon(Icons.add, color: Color(0xFF0A0E14)),
         label: const Text('Challenge', style: TextStyle(color: Color(0xFF0A0E14))),
       ),
-      body: GridView.count(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        padding: const EdgeInsets.all(16),
-        children: [
-          _GameCard(name: 'Chess', icon: '♔', color: const Color(0xFF8B4513), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChessGame()))),
-          _GameCard(name: 'Checkers', icon: '⭕', color: const Color(0xFFDC143C), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckersGame()))),
-          _GameCard(name: 'Tetris', icon: '🧱', color: const Color(0xFF00CED1), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TetrisGame()))),
-          _GameCard(name: 'Snake', icon: '🐍', color: const Color(0xFF32CD32), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SnakeGame()))),
-          _GameCard(name: 'Pong', icon: '🏓', color: const Color(0xFFFF6347), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PongGame()))),
-          _GameCard(name: 'Wordle', icon: '📝', color: const Color(0xFFFFD700), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WordleGame()))),
-        ],
-      ),
+      body: Column(children: [
+        // External Games Section
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.videogame_asset, color: Color(0xFF00D4AA)),
+              const SizedBox(width: 8),
+              const Text('External Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ]),
+            const SizedBox(height: 8),
+            const Text('Connect FIFA, PES, Mobile games, Console games', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              _externalGameChip('🎮 FIFA'),
+              _externalGameChip('⚽ PES'),
+              _externalGameChip('🎯 PUBG'),
+              _externalGameChip('🎲 COD'),
+              _externalGameChip('🎰 Slots'),
+            ]),
+          ]),
+        ),
+        // Built-in Games
+        Expanded(
+          child: GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            padding: const EdgeInsets.all(16),
+            children: [
+              _GameCard(name: 'Chess', icon: '♔', color: const Color(0xFF8B4513), onTap: () {}),
+              _GameCard(name: 'Checkers', icon: '⭕', color: const Color(0xFFDC143C), onTap: () {}),
+              _GameCard(name: 'Tetris', icon: '🧱', color: const Color(0xFF00CED1), onTap: () {}),
+              _GameCard(name: 'Snake', icon: '🐍', color: const Color(0xFF32CD32), onTap: () {}),
+              _GameCard(name: 'Pong', icon: '🏓', color: const Color(0xFFFF6347), onTap: () {}),
+              _GameCard(name: 'Wordle', icon: '📝', color: const Color(0xFFFFD700), onTap: () {}),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _externalGameChip extends StatelessWidget {
+  final String label;
+  const _externalGameChip(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF00D4AA))),
+      child: Text(label, style: const TextStyle(color: Color(0xFF00D4AA))),
     );
   }
 }
@@ -347,7 +726,6 @@ class _GameCard extends StatelessWidget {
   final String icon;
   final Color color;
   final VoidCallback onTap;
-
   const _GameCard({required this.name, required this.icon, required this.color, required this.onTap});
 
   @override
@@ -367,381 +745,6 @@ class _GameCard extends StatelessWidget {
   }
 }
 
-// ==================== CHESS GAME ====================
-class ChessGame extends StatefulWidget {
-  const ChessGame({super.key});
-
-  @override
-  State<ChessGame> createState() => _ChessGameState();
-}
-
-class _ChessGameState extends State<ChessGame> {
-  List<List<String>> board = List.generate(8, (_) => List.generate(8, (_) => ''));
-  bool whiteTurn = true;
-  String? selectedPiece;
-  int? selectedRow, selectedCol;
-
-  @override
-  void initState() {
-    super.initState();
-    _initBoard();
-  }
-
-  void _initBoard() {
-    // Set up pieces
-    for (int i = 0; i < 8; i++) {
-      board[1][i] = '♟'; // Black pawns
-      board[6][i] = '♙'; // White pawns
-    }
-    board[0] = ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'];
-    board[7] = ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖'];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chess'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: Column(children: [
-        Text(whiteTurn ? "White's Turn" : "Black's Turn", style: const TextStyle(color: Colors.white, fontSize: 20)),
-        const SizedBox(height: 16),
-        Expanded(
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
-            itemCount: 64,
-            itemBuilder: (context, index) {
-              int row = index ~/ 8;
-              int col = index % 8;
-              bool isDark = (row + col) % 2 == 1;
-              bool isSelected = selectedRow == row && selectedCol == col;
-              return GestureDetector(
-                onTap: () => _onTap(row, col),
-                child: Container(
-                  color: isSelected ? const Color(0xFF00D4AA) : (isDark ? Colors.brown[800] : Colors.brown[300]),
-                  child: Center(child: Text(board[row][col], style: TextStyle(fontSize: 32, color: board[row][col].isNotEmpty ? (board[row][col].codeUnitAt(0) > 0x2600 ? Colors.white : Colors.black) : null))),
-                ),
-              );
-            },
-          ),
-        ),
-        ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text('Exit')),
-      ]),
-    );
-  }
-
-  void _onTap(int row, int col) {
-    if (selectedPiece == null) {
-      if (board[row][col].isNotEmpty) {
-        setState(() {
-          selectedPiece = board[row][col];
-          selectedRow = row;
-          selectedCol = col;
-        });
-      }
-    } else {
-      setState(() {
-        board[row][col] = selectedPiece!;
-        board[selectedRow!][selectedCol!] = '';
-        selectedPiece = null;
-        selectedRow = null;
-        selectedCol = null;
-        whiteTurn = !whiteTurn;
-      });
-    }
-  }
-}
-
-// ==================== CHECKERS GAME ====================
-class CheckersGame extends StatefulWidget {
-  const CheckersGame({super.key});
-
-  @override
-  State<CheckersGame> createState() => _CheckersGameState();
-}
-
-class _CheckersGameState extends State<CheckersGame> {
-  List<List<int>> board = List.generate(8, (_) => List.generate(8, (_) => 0));
-  // 0 = empty, 1 = white, 2 = black, 3 = white king, 4 = black king
-
-  @override
-  void initState() {
-    super.initState();
-    _initBoard();
-  }
-
-  void _initBoard() {
-    for (int r = 0; r < 8; r++) {
-      for (int c = 0; c < 8; c++) {
-        if ((r + c) % 2 == 1) {
-          if (r < 3) board[r][c] = 2;
-          else if (r > 4) board[r][c] = 1;
-        }
-      }
-    }
-  }
-
-  String _piece(int p) {
-    if (p == 1) return '⚪';
-    if (p == 2) return '⚫';
-    if (p == 3) return '👑';
-    if (p == 4) return '👑';
-    return '';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Checkers'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: GridView.builder(
-        shrinkWrap: true,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
-        itemCount: 64,
-        itemBuilder: (context, index) {
-          int row = index ~/ 8;
-          int col = index % 8;
-          bool isDark = (row + col) % 2 == 1;
-          return Container(
-            color: isDark ? Colors.black : Colors.white,
-            child: Center(child: Text(_piece(board[row][col]), style: const TextStyle(fontSize: 28))),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ==================== TETRIS GAME ====================
-class TetrisGame extends StatefulWidget {
-  const TetrisGame({super.key});
-
-  @override
-  State<TetrisGame> createState() => _TetrisGameState();
-}
-
-class _TetrisGameState extends State<TetrisGame> {
-  List<List<int>> board = List.generate(20, (_) => List.filled(10, 0));
-  List<List<int>> piece = [[1, 1, 1, 1]];
-  int px = 3, py = 0;
-  int score = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Tetris - Score: $score'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: Column(children: [
-        Expanded(
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 10),
-            itemCount: 200,
-            itemBuilder: (context, index) {
-              int row = index ~/ 10;
-              int col = index % 10;
-              bool isPiece = py >= 0 && py < piece.length && px >= 0 && px < piece[0].length && piece[py][px] == 1;
-              return Container(
-                color: (board[row][col] == 1 || isPiece) ? const Color(0xFF00D4AA) : Colors.grey[800],
-                margin: const EdgeInsets.all(1),
-              );
-            },
-          ),
-        ),
-        Padding(padding: const EdgeInsets.all(16), child: ElevatedButton(onPressed: _moveDown, child: const Text('Drop'))),
-      ]),
-    );
-  }
-
-  void _moveDown() {
-    setState(() {
-      py++;
-      if (py >= 20 - piece.length) {
-        for (int r = 0; r < piece.length; r++) {
-          for (int c = 0; c < piece[0].length; c++) {
-            if (piece[r][c] == 1 && py + r < 20) board[py + r][px + c] = 1;
-          }
-        }
-        score += 10;
-        py = 0;
-        px = 3;
-      }
-    });
-  }
-}
-
-// ==================== SNAKE GAME ====================
-class SnakeGame extends StatefulWidget {
-  const SnakeGame({super.key});
-
-  @override
-  State<SnakeGame> createState() => _SnakeGameState();
-}
-
-class _SnakeGameState extends State<SnakeGame> {
-  List<List<int>> board = List.generate(20, (_) => List.filled(20, 0));
-  List<int> snake = [0, 1, 2];
-  int direction = 1; // 0=up,1=right,2=down,3=left
-  int food = 0;
-  int score = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _placeFood();
-  }
-
-  void _placeFood() {
-    food = Random().nextInt(400);
-    while (snake.contains(food)) food = Random().nextInt(400);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Snake - Score: $score'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: GridView.builder(
-        shrinkWrap: true,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 20),
-        itemCount: 400,
-        itemBuilder: (context, index) {
-          return Container(
-            color: index == food ? Colors.red : (snake.contains(index) ? const Color(0xFF00D4AA) : Colors.black),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ==================== PONG GAME ====================
-class PongGame extends StatefulWidget {
-  const PongGame({super.key});
-
-  @override
-  State<PongGame> createState() => _PongGameState();
-}
-
-class _PongGameState extends State<PongGame> {
-  double ballX = 0.5, ballY = 0.5;
-  double ballDX = 0.02, ballDY = 0.02;
-  double paddle1Y = 0.4, paddle2Y = 0.4;
-  int p1Score = 0, p2Score = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Pong - $p1Score : $p2Score'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: GestureDetector(
-        onVerticalDragUpdate: (d) => setState(() {
-          paddle2Y = (paddle2Y + d.delta.dy / 500).clamp(0.1, 0.8);
-        }),
-        child: Column(children: [
-          Expanded(
-            child: Stack(children: [
-              Container(color: Colors.black),
-              Positioned(left: 10, top: paddle1Y * 300, child: Container(width: 10, height: 60, color: Colors.white)),
-              Positioned(right: 10, top: paddle2Y * 300, child: Container(width: 10, height: 60, color: Colors.white)),
-              Positioned(left: ballX * 300, top: ballY * 400, child: Container(width: 20, height: 20, decoration: const BoxDecoration(color: Color(0xFF00D4AA), shape: BoxShape.circle))),
-            ]),
-          ),
-          ElevatedButton(onPressed: _reset, child: const Text('Reset')),
-        ]),
-      ),
-    );
-  }
-
-  void _reset() {
-    setState(() {
-      ballX = 0.5;
-      ballY = 0.5;
-      ballDX = 0.02;
-      ballDY = 0.02;
-    });
-  }
-}
-
-// ==================== WORDLE GAME ====================
-class WordleGame extends StatefulWidget {
-  const WordleGame({super.key});
-
-  @override
-  State<WordleGame> createState() => _WordleGameState();
-}
-
-class _WordleGameState extends State<WordleGame> {
-  final List<String> words = ['HELLO', 'WORLD', 'GAMES', 'PINC', 'CRYPT', 'BLOCK', 'CHAT', 'WALLET', 'VPN', 'NETWORK'];
-  late String target;
-  List<String> guesses = [];
-  String current = '';
-  int maxGuesses = 6;
-
-  @override
-  void initState() {
-    super.initState();
-    target = words[Random().nextInt(words.length)];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Wordle'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: Column(children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: maxGuesses,
-            itemBuilder: (context, i) {
-              String guess = i < guesses.length ? guesses[i] : '';
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (j) {
-                    Color bg = Colors.grey[800]!;
-                    if (guess.length > j) {
-                      if (target[j] == guess[j]) bg = Colors.green;
-                      else if (target.contains(guess[j])) bg = Colors.orange;
-                    }
-                    return Container(
-                      width: 50, height: 50,
-                      decoration: BoxDecoration(color: bg, border: Border.all(color: Colors.white)),
-                      child: Center(child: Text(guess.length > j ? guess[j] : '', style: const TextStyle(color: Colors.white, fontSize: 24))),
-                    );
-                  }),
-                ),
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: TextField(
-            maxLength: 5,
-            style: const TextStyle(color: Colors.white, fontSize: 24),
-            decoration: InputDecoration(hintText: 'Enter 5 letters', hintStyle: const TextStyle(color: Colors.grey), filled: true, fillColor: const Color(0xFF1A2028)),
-            onSubmitted: (v) {
-              if (v.length == 5 && guesses.length < maxGuesses) {
-                setState(() {
-                  guesses.add(v.toUpperCase());
-                  current = '';
-                  if (v.toUpperCase() == target) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You Won!')));
-                  } else if (guesses.length >= maxGuesses) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Game Over! Word: $target')));
-                  }
-                });
-              }
-            },
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
 // ==================== PROFILE TAB ====================
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -754,9 +757,11 @@ class ProfileTab extends StatelessWidget {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
+          // Profile Header
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), shape: BoxShape.circle),
+            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
+              shape: BoxShape.circle),
             child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14)),
           ),
           const SizedBox(height: 16),
@@ -768,20 +773,42 @@ class ProfileTab extends StatelessWidget {
             child: const Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.verified, color: Colors.green, size: 16),
               SizedBox(width: 4),
-              Text('6-Phase Security', style: TextStyle(color: Colors.green, fontSize: 12)),
+              Text('6-Phase Security Active', style: TextStyle(color: Colors.green, fontSize: 12)),
             ]),
           ),
           const SizedBox(height: 24),
-          _profileItem(Icons.shield, 'Security'),
-          _profileItem(Icons.forum, 'Forums'),
-          _profileItem(Icons.settings, 'Settings'),
-          _profileItem(Icons.help, 'Help & Support'),
+
+          // Security Features
+          const Align(alignment: Alignment.centerLeft, child: Text('Security', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 12),
+          _profileItem(Icons.shield, 'Security', 'PIN, Password, Pattern, Biometric'),
+          _profileItem(Icons.fingerprint, 'Anti-Hack', 'Device fingerprinting'),
+          _profileItem(Icons.smartphone, 'Anti-Tamper', 'SIM change detection'),
+          _profileItem(Icons.analytics, 'Storage Speed', 'Rankings • Optimization'),
+          const SizedBox(height: 16),
+
+          // Admin
+          const Align(alignment: Alignment.centerLeft, child: Text('Admin', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 12),
+          _profileItem(Icons.admin_panel_settings, 'Admin Mode', 'Node control'),
+          _profileItem(Icons.cloud_upload, 'Upload/Download', 'Server settings'),
+          _profileItem(Icons.compress, 'Compression', 'Data optimization'),
+          _profileItem(Icons.restart_alt, 'Recovery', 'Data recovery'),
+          const SizedBox(height: 16),
+
+          // Settings
+          const Align(alignment: Alignment.centerLeft, child: Text('Settings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 12),
+          _profileItem(Icons.forum, 'Forums', 'Community'),
+          _profileItem(Icons.settings, 'App Settings', 'Preferences'),
+          _profileItem(Icons.help, 'Help & Support', 'Get help'),
+          _profileItem(Icons.info, 'About PINC', 'Network info'),
         ]),
       ),
     );
   }
 
-  Widget _profileItem(IconData icon, String title) {
+  Widget _profileItem(IconData icon, String title, String subtitle) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -790,8 +817,10 @@ class ProfileTab extends StatelessWidget {
         Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: const Color(0xFF00D4AA))),
         const SizedBox(width: 16),
-        Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        const Spacer(),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ])),
         const Icon(Icons.chevron_right, color: Colors.grey),
       ]),
     );
