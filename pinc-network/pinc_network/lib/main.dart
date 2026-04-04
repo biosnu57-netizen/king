@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math';
-import 'dart:convert';
-import 'dart:typed_data';
 
 void main() => runApp(const PincNetworkApp());
 
@@ -45,7 +44,6 @@ class _AuthenticationWrapperState extends State<AuthenticationWrapper> {
     await Future.delayed(const Duration(seconds: 1));
     setState(() {
       _isLoading = false;
-      // Change to true to test authenticated state
       _isLoggedIn = false;
     });
   }
@@ -77,6 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneController = TextEditingController();
   bool _isVerifying = false;
   String _verificationStatus = '';
+  bool _securityEnabled = true;
+  bool _biometricEnabled = false;
+  String _deviceId = '';
 
   @override
   Widget build(BuildContext context) {
@@ -88,8 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
-              // Logo
+              const SizedBox(height: 40),
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: const BoxDecoration(
@@ -101,88 +101,72 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               const Text('PINC Network', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
               const Text('Decentralized Privacy Platform', style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
 
               // Phone Login
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Phone Number Verification', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('1 account = 1 phone number\nAnonymous transactions enabled', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: '+254...',
-                        hintText: 'Enter phone number',
-                        filled: true,
-                        fillColor: const Color(0xFF0A0E14),
-                        prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF00D4AA)),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+              _buildSection(
+                title: 'Phone Verification',
+                subtitle: '1 account = 1 phone number',
+                child: Column(children: [
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: '+254...',
+                      filled: true,
+                      fillColor: const Color(0xFF0A0E14),
+                      prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF00D4AA)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isVerifying ? null : _verifyPhone,
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
-                        child: _isVerifying
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0E14)))
-                            : const Text('Verify & Create Account', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold)),
-                      ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isVerifying ? null : _verifyPhone,
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
+                      child: _isVerifying
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0A0E14)))
+                          : const Text('Verify & Create Account', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold)),
                     ),
-                    if (_verificationStatus.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(_verificationStatus, style: TextStyle(color: _verificationStatus.contains('✅') ? Colors.green : Colors.red)),
-                    ],
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Geo-verification info
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.location_on, color: Color(0xFF00D4AA), size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Geo-Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ]),
+                  ),
+                  if (_verificationStatus.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    const Text('• Location verified for 1 account per phone\n• IP anonymized\n• Transactions untraceable', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(_verificationStatus, style: TextStyle(color: _verificationStatus.contains('✅') ? Colors.green : Colors.red)),
                   ],
-                ),
+                ]),
               ),
+              const SizedBox(height: 20),
 
-              const SizedBox(height: 24),
+              // Anti-Theft Settings
+              _buildSection(
+                title: 'Anti-Theft Protection',
+                subtitle: 'Secure your device',
+                child: Column(children: [
+                  _toggleTile('Enable Anti-Theft', _securityEnabled, (v) => setState(() => _securityEnabled = v)),
+                  _toggleTile('Biometric Lock', _biometricEnabled, (v) => setState(() => _biometricEnabled = v)),
+                  _infoTile(Icons.lock, 'Shutdown Protection', 'Device cannot shut down without PIN'),
+                  _infoTile(Icons.visibility_off, 'Stealth Mode', 'App hidden from launcher'),
+                  _infoTile(Icons.location_on, 'Location Tracking', 'Track when stolen'),
+                ]),
+              ),
+              const SizedBox(height: 20),
 
-              // Anti-fraud info
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.security, color: Color(0xFF00D4AA), size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Anti-Fraud & Anti-Hack', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ]),
-                    const SizedBox(height: 8),
-                    const Text('• Device fingerprinting\n• SIM change detection\n• Anti-tampering protection\n• Secure enclave', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
+              // Device ID
+              _buildSection(
+                title: 'Device Security',
+                subtitle: 'Your unique device identifier',
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFF0A0E14), borderRadius: BorderRadius.circular(8)),
+                  child: Row(children: [
+                    const Icon(Icons.fingerprint, color: Color(0xFF00D4AA)),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(_deviceId.isEmpty ? 'Device ID: Generating...' : _deviceId, style: const TextStyle(color: Colors.white, fontSize: 12))),
+                    IconButton(icon: const Icon(Icons.copy, size: 18, color: Colors.grey), onPressed: () {}),
+                  ]),
                 ),
               ),
             ],
@@ -192,25 +176,66 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildSection({required String title, required String subtitle, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleTile(String title, bool value, ValueChanged<bool> onChanged) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFF0A0E14), borderRadius: BorderRadius.circular(8)),
+      child: Row(children: [
+        Text(title, style: const TextStyle(color: Colors.white)),
+        const Spacer(),
+        Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFF00D4AA)),
+      ]),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String title, String subtitle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFF0A0E14), borderRadius: BorderRadius.circular(8)),
+      child: Row(children: [
+        Icon(icon, color: const Color(0xFF00D4AA), size: 20),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(color: Colors.white)),
+          Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        ])),
+      ]),
+    );
+  }
+
   Future<void> _verifyPhone() async {
-    if (_phoneController.text.isEmpty || _phoneController.text.length < 10) {
-      setState(() => _verificationStatus = 'Please enter valid phone number');
+    if (_phoneController.text.isEmpty) {
+      setState(() => _verificationStatus = 'Enter phone number');
       return;
     }
-
     setState(() {
       _isVerifying = true;
       _verificationStatus = '';
+      _deviceId = 'PINC-${DateTime.now().millisecondsSinceEpoch.toRadixString(16).toUpperCase()}';
     });
-
-    // Simulate verification
     await Future.delayed(const Duration(seconds: 2));
-
     setState(() {
       _isVerifying = false;
-      _verificationStatus = '✅ Account created! One-time setup complete.';
+      _verificationStatus = '✅ Account created with anti-theft!';
     });
-
     await Future.delayed(const Duration(seconds: 1));
     if (mounted) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
@@ -231,9 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _tabs = const [
     VpnTab(),
     WalletTab(),
-    ChatTab(),
+    GameMonitorTab(),
     JobsTab(),
-    GamesHubTab(),
     ProfileTab(),
   ];
 
@@ -250,14 +274,294 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.shield), label: 'VPN'),
           BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
           BottomNavigationBarItem(icon: Icon(Icons.sports_esports), label: 'Games'),
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
   }
+}
+
+// ==================== GAME MONITOR TAB (NEW) ====================
+class GameMonitorTab extends StatefulWidget {
+  const GameMonitorTab({super.key});
+
+  @override
+  State<GameMonitorTab> createState() => _GameMonitorTabState();
+}
+
+class _GameMonitorTabState extends State<GameMonitorTab> {
+  bool _monitoring = true;
+  List<FriendGameStatus> _friends = [];
+  List<PlatformLink> _platforms = [];
+  List<PendingChallenge> _challenges = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Simulate friends playing
+    _friends = [
+      FriendGameStatus(name: 'Alice', game: 'FIFA 24', platform: 'PS5', isPlaying: true, matchId: 'MATCH-123'),
+      FriendGameStatus(name: 'Bob', game: 'COD MW3', platform: 'Xbox', isPlaying: true, matchId: 'RANKED-456'),
+      FriendGameStatus(name: 'Charlie', game: 'PES 2024', platform: 'Mobile', isPlaying: true, matchId: 'LOBBY-789'),
+    ];
+    _platforms = [
+      PlatformLink(platform: 'PlayStation', icon: '🎮', isConnected: true, psnId: 'PINC_Player1'),
+      PlatformLink(platform: 'Xbox', icon: '❎', isConnected: true, xboxId: 'PINC_Gamer'),
+      PlatformLink(platform: 'PC', icon: '💻', isConnected: true, pcId: 'PC-Master'),
+      PlatformLink(platform: 'Mobile', icon: '📱', isConnected: true, deviceId: 'Android-01'),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Game Monitor'),
+        backgroundColor: const Color(0xFF0A0E14),
+        actions: [
+          Switch(value: _monitoring, onChanged: (v) => setState(() => _monitoring = v), activeColor: const Color(0xFF00D4AA)),
+          const SizedBox(width: 8),
+          IconButton(icon: const Icon(Icons.notifications_active), onPressed: () => _showNotificationSettings()),
+        ],
+      ),
+      backgroundColor: const Color(0xFF0A0E14),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Real-time Monitoring Status
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: _monitoring ? const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]) : const LinearGradient(colors: [Colors.grey, Colors.grey]),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(children: [
+              Icon(_monitoring ? Icons.visibility : Icons.visibility_off, color: _monitoring ? const Color(0xFF0A0E14) : Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(_monitoring ? 'Monitoring Active' : 'Monitoring Paused', style: TextStyle(color: _monitoring ? const Color(0xFF0A0E14) : Colors.white, fontWeight: FontWeight.bold)),
+                Text(_monitoring ? 'Friends will be notified when you play' : 'Enable to find challenge opponents', style: TextStyle(color: _monitoring ? const Color(0xFF0A0E14) : Colors.grey, fontSize: 12)),
+              ])),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // Friends Currently Playing
+          const Text('Friends Playing Now', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          ...(_friends.map((f) => _buildFriendCard(f)).toList()),
+          const SizedBox(height: 24),
+
+          // Platform Links
+          const Text('Connected Platforms', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _platforms.length,
+              itemBuilder: (context, index) {
+                final p = _platforms[index];
+                return Container(
+                  width: 90,
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text(p.icon, style: const TextStyle(fontSize: 28)),
+                    const SizedBox(height: 4),
+                    Text(p.platform, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                    Text(p.isConnected ? '✓' : '○', style: TextStyle(color: p.isConnected ? Colors.green : Colors.grey, fontSize: 10)),
+                  ]),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Pending Challenges
+          if (_challenges.isNotEmpty) ...[
+            const Text('Pending Challenges', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            ...(_challenges.map((c) => _buildChallengeCard(c)).toList()),
+          ],
+          const SizedBox(height: 24),
+
+          // External Games Integration
+          _buildExternalGamesSection(),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildFriendCard(FriendGameStatus friend) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(25)),
+          child: Center(child: Text(friend.name[0], style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 20))),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(friend.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+              child: const Text('LIVE', style: TextStyle(color: Colors.green, fontSize: 10))),
+          ]),
+          Text('${friend.game} on ${friend.platform}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text('Match: ${friend.matchId}', style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 11)),
+        ])),
+        ElevatedButton(
+          onPressed: () => _sendChallenge(friend),
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+          child: const Text('Challenge', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 12)),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildChallengeCard(PendingChallenge challenge) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00D4AA))),
+      child: Row(children: [
+        const Icon(Icons.sports_score, color: Color(0xFF00D4AA)),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('vs ${challenge.from}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          Text('${challenge.game} - ${challenge.wager} PINC', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ])),
+        Row(children: [
+          IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => _acceptChallenge(challenge)),
+          IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => _rejectChallenge(challenge)),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _buildExternalGamesSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.link, color: Color(0xFF00D4AA)),
+          SizedBox(width: 8),
+          Text('Link External Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ]),
+        const SizedBox(height: 12),
+        const Text('Connect your accounts to automatically detect when friends are playing and receive challenge notifications:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 16),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          _gameChip('🎮 PlayStation', 'Connect PSN'),
+          _gameChip('❎ Xbox', 'Connect Xbox'),
+          _gameChip('💻 Steam', 'Connect Steam'),
+          _gameChip('📱 Mobile', 'Connect ID'),
+          _gameChip('🍎 Apple', 'Connect Game Center'),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _gameChip(String label, String action) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFF0A0E14), borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        const SizedBox(width: 8),
+        Text(action, style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 10)),
+      ]),
+    );
+  }
+
+  void _sendChallenge(FriendGameStatus friend) {
+    showDialog(context: context, builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1A2028),
+      title: Text('Challenge ${friend.name}', style: const TextStyle(color: Colors.white)),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text('Game: ${friend.game}', style: const TextStyle(color: Colors.grey)),
+        const SizedBox(height: 16),
+        TextField(decoration: const InputDecoration(labelText: 'Wager (PINC)', filled: true, fillColor: Color(0xFF0A0E14)), keyboardType: TextInputType.number),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ElevatedButton(onPressed: () {
+          Navigator.pop(ctx);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challenge sent!'), backgroundColor: Color(0xFF00D4AA)));
+        }, child: const Text('Send')),
+      ],
+    ));
+  }
+
+  void _acceptChallenge(PendingChallenge c) {
+    setState(() => _challenges.remove(c));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Challenge accepted!'), backgroundColor: Color(0xFF00D4AA)));
+  }
+
+  void _rejectChallenge(PendingChallenge c) {
+    setState(() => _challenges.remove(c));
+  }
+
+  void _showNotificationSettings() {
+    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF1A2028), builder: (ctx) => Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Notification Settings', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        _toggleSetting('Friend Online', true),
+        _toggleSetting('Challenge Request', true),
+        _toggleSetting('Same Game Match', true),
+        _toggleSetting('Tournament Alert', false),
+        _toggleSetting('Wager Updates', true),
+      ]),
+    ));
+  }
+
+  Widget _toggleSetting(String title, bool value) {
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Row(children: [
+      Text(title, style: const TextStyle(color: Colors.white)),
+      const Spacer(),
+      Switch(value: value, onChanged: (v) {}, activeColor: const Color(0xFF00D4AA)),
+    ]));
+  }
+}
+
+// ==================== DATA MODELS ====================
+class FriendGameStatus {
+  final String name;
+  final String game;
+  final String platform;
+  final bool isPlaying;
+  final String matchId;
+  FriendGameStatus({required this.name, required this.game, required this.platform, required this.isPlaying, required this.matchId});
+}
+
+class PlatformLink {
+  final String platform;
+  final String icon;
+  final bool isConnected;
+  final String? psnId;
+  final String? xboxId;
+  final String? pcId;
+  final String? deviceId;
+  PlatformLink({required this.platform, required this.icon, this.isConnected = false, this.psnId, this.xboxId, this.pcId, this.deviceId});
+}
+
+class PendingChallenge {
+  final String from;
+  final String game;
+  final String wager;
+  PendingChallenge({required this.from, required this.game, required this.wager});
 }
 
 // ==================== VPN TAB ====================
@@ -267,113 +571,27 @@ class VpnTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PINC VPN'),
-        backgroundColor: const Color(0xFF0A0E14),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VpnSettingsPage()))),
-        ],
-      ),
+      appBar: AppBar(title: const Text('PINC VPN'), backgroundColor: const Color(0xFF0A0E14)),
       backgroundColor: const Color(0xFF0A0E14),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-          // Connection Status
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(children: [
-              const Icon(Icons.shield, size: 50, color: Color(0xFF0A0E14)),
-              const SizedBox(height: 8),
-              const Text('P2P Mesh Network', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 20, fontWeight: FontWeight.bold)),
-              const Text('8-thread parallel processing', style: TextStyle(color: Color(0xFF0A0E14))),
+            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
+            child: const Column(children: [
+              Icon(Icons.shield, size: 50, color: Color(0xFF0A0E14)),
+              SizedBox(height: 8),
+              Text('P2P Mesh Network', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 20, fontWeight: FontWeight.bold)),
             ]),
           ),
           const SizedBox(height: 24),
-
-          // Connection Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
-              child: const Text('Connect', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold, fontSize: 18)),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Node Info
-          _infoCard('Network Nodes', '12,453 active nodes'),
-          _infoCard('Your IP', 'Protected • Hidden'),
-          _infoCard('Encryption', 'AES-256 + Triple Layer'),
-          _infoCard('Speed Ranking', '#47 in your region'),
+          SizedBox(width: double.infinity, child: ElevatedButton(
+            onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
+            child: const Text('Connect', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold, fontSize: 18)),
+          )),
         ]),
       ),
-    );
-  }
-
-  Widget _infoCard(String title, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        const Icon(Icons.info_outline, color: Color(0xFF00D4AA)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ])),
-      ]),
-    );
-  }
-}
-
-class VpnSettingsPage extends StatelessWidget {
-  const VpnSettingsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('VPN Settings'), backgroundColor: const Color(0xFF0A0E14)),
-      backgroundColor: const Color(0xFF0A0E14),
-      body: ListView(padding: const EdgeInsets.all(16), children: const [
-        Text('Node Settings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 16),
-        _SettingTile('Auto-connect', true),
-        _SettingTile('Split Tunneling', false),
-        _SettingTile('Kill Switch', true),
-        _SettingTile('Multi-hop Routing', false),
-        SizedBox(height: 24),
-        Text('Upload/Download', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 16),
-        _SettingTile('Compression', true),
-        _SettingTile('Encryption Level', true),
-        _SettingTile('Data Saving Mode', false),
-      ]),
-    );
-  }
-}
-
-class _SettingTile extends StatelessWidget {
-  final String title;
-  final bool value;
-  const _SettingTile(this.title, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(8)),
-      child: Row(children: [
-        Text(title, style: const TextStyle(color: Colors.white)),
-        const Spacer(),
-        Switch(value: value, onChanged: (v) {}, activeColor: const Color(0xFF00D4AA)),
-      ]),
     );
   }
 }
@@ -385,89 +603,20 @@ class WalletTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PINC Wallet'),
-        backgroundColor: const Color(0xFF0A0E14),
-        actions: [
-          IconButton(icon: const Icon(Icons.history), onPressed: () {}),
-        ],
-      ),
+      appBar: AppBar(title: const Text('PINC Wallet'), backgroundColor: const Color(0xFF0A0E14)),
       backgroundColor: const Color(0xFF0A0E14),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          // Balance Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(children: [
-              const Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
-              const SizedBox(height: 8),
-              const Text('0.00 PINC', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 32, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.lock, size: 14, color: Color(0xFF0A0E14)),
-                const SizedBox(width: 4),
-                const Text('Encrypted • Private', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 12)),
-              ]),
-            ]),
-          ),
-          const SizedBox(height: 16),
-
-          // Actions
-          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _action(Icons.upload, 'Send'),
-            _action(Icons.download, 'Receive'),
-            _action(Icons.swap_horiz, 'Swap'),
-            _action(Icons.analytics, 'Trade'),
-          ]),
-          const SizedBox(height: 24),
-
-          // P2P Market Verification
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Icon(Icons.verified_user, color: Color(0xFF00D4AA)),
-                const SizedBox(width: 8),
-                const Text('P2P Market Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ]),
-              const SizedBox(height: 8),
-              const Text('• Transaction verification system\n• Papa Business verification\n• Escrow automatic release\n• Dispute resolution AI', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Verify'))),
-                const SizedBox(width: 12),
-                Expanded(child: ElevatedButton(onPressed: () {}, child: const Text('Create Escrow'))),
-              ]),
-            ]),
-          ),
-          const SizedBox(height: 16),
-
-          // Deposit Methods
-          const Align(alignment: Alignment.centerLeft, child: Text('Deposit/Withdraw', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 12),
-          _tile(Icons.credit_card, 'Credit Card', 'Via agents'),
-          _tile(Icons.paid, 'P2P Agents', 'Country-based'),
-          _tile(Icons.account_balance, 'PayPal', 'Third-party'),
-          _tile(Icons.storefront, 'Papa Business', 'Verified shops'),
-          const SizedBox(height: 16),
-
-          // Transfer Types
-          const Align(alignment: Alignment.centerLeft, child: Text('Transfer Types', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 12),
-          _transferCard('1', 'Subscription', 'Recurring', const Color(0xFF667eea)),
-          _transferCard('2', 'Wagers/Challenges', 'Gaming', const Color(0xFFf093fb)),
-          _transferCard('3', 'Savings', 'Protected', const Color(0xFF11998e)),
-          _transferCard('4', 'Service Payment', 'Jobs/Freelance', const Color(0xFF4facfe)),
-          _transferCard('5', 'Papa Business', 'Verified', const Color(0xFF00D4AA)),
+      body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
+        Container(width: double.infinity, padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
+          child: const Column(children: [
+            Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
+            Text('0.00 PINC', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 32, fontWeight: FontWeight.bold)),
+          ])),
+        const SizedBox(height: 16),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          _action(Icons.upload, 'Send'), _action(Icons.download, 'Receive'), _action(Icons.swap_horiz, 'Swap'), _action(Icons.analytics, 'Trade'),
         ]),
-      ),
+      ])),
     );
   }
 
@@ -479,67 +628,6 @@ class WalletTab extends StatelessWidget {
       Text(label, style: const TextStyle(color: Colors.grey)),
     ]);
   }
-
-  Widget _tile(IconData icon, String title, String sub) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: const Color(0xFF00D4AA))),
-        const SizedBox(width: 16),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          Text(sub, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        ])),
-        const Icon(Icons.chevron_right, color: Colors.grey),
-      ]),
-    );
-  }
-
-  Widget _transferCard(String n, String t, String s, Color c) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12), border: Border.all(color: c.withOpacity(0.3))),
-      child: Row(children: [
-        Container(width: 40, height: 40, decoration: BoxDecoration(color: c.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-          child: Center(child: Text(n, style: TextStyle(color: c, fontWeight: FontWeight.bold)))),
-        const SizedBox(width: 16),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(t, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          Text(s, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        ])),
-      ]),
-    );
-  }
-}
-
-// ==================== CHAT TAB ====================
-class ChatTab extends StatelessWidget {
-  const ChatTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chats'), backgroundColor: const Color(0xFF0A0E14),
-        actions: const [IconButton(icon: Icon(Icons.call), onPressed: null), IconButton(icon: Icon(Icons.video_call), onPressed: null)]),
-      backgroundColor: const Color(0xFF0A0E14),
-      floatingActionButton: FloatingActionButton(backgroundColor: const Color(0xFF00D4AA), onPressed: () {},
-        child: const Icon(Icons.edit, color: Color(0xFF0A0E14))),
-      body: ListView(children: const [
-        ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('A', style: TextStyle(color: Color(0xFF0A0E14)))),
-          title: Text('Alice', style: TextStyle(color: Colors.white)),
-          subtitle: Text('Encrypted message...', style: TextStyle(color: Colors.grey)),
-          trailing: Text('2:34 PM', style: TextStyle(color: Colors.grey))),
-        ListTile(leading: CircleAvatar(backgroundColor: Color(0xFF00D4AA), child: Text('B', style: TextStyle(color: Color(0xFF0A0E14)))),
-          title: Text('Papa Business', style: TextStyle(color: Colors.white)),
-          subtitle: Text('Verified ✓', style: TextStyle(color: Color(0xFF00D4AA))),
-          trailing: Text('1:20 PM', style: TextStyle(color: Colors.grey))),
-      ]),
-    );
-  }
 }
 
 // ==================== JOBS TAB ====================
@@ -548,200 +636,18 @@ class JobsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Remote Jobs'), backgroundColor: const Color(0xFF0A0E14),
-          bottom: const TabBar(labelColor: Color(0xFF00D4AA), indicatorColor: Color(0xFF00D4AA),
-            tabs: [Tab(text: 'Find'), Tab(text: 'My Jobs'), Tab(text: 'Post'), Tab(text: 'PapaBiz')])),
-        backgroundColor: const Color(0xFF0A0E14),
-        body: const TabBarView(children: [_FindJobsView(), _MyJobsView(), _PostJobView(), _PapaBizView()]),
-      ),
-    );
-  }
-}
-
-class _FindJobsView extends StatelessWidget {
-  const _FindJobsView();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      _jobCard('Full Stack Developer', '500-1000 PINC', '5 needed', 'Software'),
-      _jobCard('UI/UX Designer', '300-500 PINC', '2 needed', 'Design'),
-      _jobCard('Content Writer', '100-200 PINC', '1 needed', 'Writing'),
-      _jobCard('Video Editor', '200-400 PINC', '3 needed', 'Media'),
-    ]);
-  }
-
-  Widget _jobCard(String title, String budget, String workers, String type) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-            child: Text(type, style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 12))),
-          const Spacer(),
-          Text(budget, style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold)),
-        ]),
-        const SizedBox(height: 12),
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(workers, style: const TextStyle(color: Colors.grey)),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('View'))),
-          const SizedBox(width: 12),
-          Expanded(child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA)),
-            child: const Text('Bid', style: TextStyle(color: Color(0xFF0A0E14))))),
-        ]),
-      ]),
-    );
-  }
-}
-
-class _MyJobsView extends StatelessWidget {
-  const _MyJobsView();
-  @override
-  Widget build(BuildContext context) => const Center(child: Text('No active jobs', style: TextStyle(color: Colors.grey)));
-}
-
-class _PostJobView extends StatelessWidget {
-  const _PostJobView();
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
-      TextField(style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: 'Job Title', filled: true, fillColor: const Color(0xFF1A2028), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-      const SizedBox(height: 16),
-      TextField(maxLines: 4, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: 'Description', filled: true, fillColor: const Color(0xFF1A2028), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-      const SizedBox(height: 16),
-      ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA), padding: const EdgeInsets.all(16)),
-        child: const Text('Post Job (Escrow)', style: TextStyle(color: Color(0xFF0A0E14), fontWeight: FontWeight.bold))),
-    ]));
-  }
-}
-
-class _PapaBizView extends StatelessWidget {
-  const _PapaBizView();
-  @override
-  Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.store, color: Color(0xFF00D4AA)),
-            const SizedBox(width: 8),
-            const Text('Papa Business Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ]),
-          const SizedBox(height: 8),
-          const Text('Verified local businesses can receive payments directly', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00D4AA)),
-            child: const Text('Register Business', style: TextStyle(color: Color(0xFF0A0E14)))),
-        ]),
-      ),
-    ]);
-  }
-}
-
-// ==================== GAMES HUB TAB ====================
-class GamesHubTab extends StatelessWidget {
-  const GamesHubTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Games & Challenges'), backgroundColor: const Color(0xFF0A0E14)),
+    return DefaultTabController(length: 4, child: Scaffold(
+      appBar: AppBar(title: const Text('Jobs'), backgroundColor: const Color(0xFF0A0E14),
+        bottom: const TabBar(labelColor: Color(0xFF00D4AA), indicatorColor: Color(0xFF00D4AA),
+          tabs: [Tab(text: 'Find'), Tab(text: 'My Jobs'), Tab(text: 'Post'), Tab(text: 'PapaBiz')])),
       backgroundColor: const Color(0xFF0A0E14),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF00D4AA),
-        onPressed: () {},
-        icon: const Icon(Icons.add, color: Color(0xFF0A0E14)),
-        label: const Text('Challenge', style: TextStyle(color: Color(0xFF0A0E14))),
-      ),
-      body: Column(children: [
-        // External Games Section
-        Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.videogame_asset, color: Color(0xFF00D4AA)),
-              const SizedBox(width: 8),
-              const Text('External Games', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 8),
-            const Text('Connect FIFA, PES, Mobile games, Console games', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 12),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              _externalGameChip('🎮 FIFA'),
-              _externalGameChip('⚽ PES'),
-              _externalGameChip('🎯 PUBG'),
-              _externalGameChip('🎲 COD'),
-              _externalGameChip('🎰 Slots'),
-            ]),
-          ]),
-        ),
-        // Built-in Games
-        Expanded(
-          child: GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            padding: const EdgeInsets.all(16),
-            children: [
-              _GameCard(name: 'Chess', icon: '♔', color: const Color(0xFF8B4513), onTap: () {}),
-              _GameCard(name: 'Checkers', icon: '⭕', color: const Color(0xFFDC143C), onTap: () {}),
-              _GameCard(name: 'Tetris', icon: '🧱', color: const Color(0xFF00CED1), onTap: () {}),
-              _GameCard(name: 'Snake', icon: '🐍', color: const Color(0xFF32CD32), onTap: () {}),
-              _GameCard(name: 'Pong', icon: '🏓', color: const Color(0xFFFF6347), onTap: () {}),
-              _GameCard(name: 'Wordle', icon: '📝', color: const Color(0xFFFFD700), onTap: () {}),
-            ],
-          ),
-        ),
+      body: const TabBarView(children: [
+        Center(child: Text('Find Jobs', style: TextStyle(color: Colors.grey))),
+        Center(child: Text('My Jobs', style: TextStyle(color: Colors.grey))),
+        Center(child: Text('Post Job', style: TextStyle(color: Colors.grey))),
+        Center(child: Text('Papa Business', style: TextStyle(color: Colors.grey))),
       ]),
-    );
-  }
-}
-
-class _externalGameChip extends StatelessWidget {
-  final String label;
-  const _externalGameChip(this.label);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF00D4AA))),
-      child: Text(label, style: const TextStyle(color: Color(0xFF00D4AA))),
-    );
-  }
-}
-
-class _GameCard extends StatelessWidget {
-  final String name;
-  final String icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _GameCard({required this.name, required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(16)),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(icon, style: const TextStyle(fontSize: 40)),
-          const SizedBox(height: 8),
-          Text(name, style: const TextStyle(color: Colors.white)),
-          Text('Tap to play', style: TextStyle(color: color, fontSize: 12)),
-        ]),
-      ),
-    );
+    ));
   }
 }
 
@@ -754,64 +660,21 @@ class ProfileTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile'), backgroundColor: const Color(0xFF0A0E14)),
       backgroundColor: const Color(0xFF0A0E14),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          // Profile Header
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]),
-              shape: BoxShape.circle),
-            child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14)),
-          ),
-          const SizedBox(height: 16),
-          const Text('User', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.verified, color: Colors.green, size: 16),
-              SizedBox(width: 4),
-              Text('6-Phase Security Active', style: TextStyle(color: Colors.green, fontSize: 12)),
-            ]),
-          ),
-          const SizedBox(height: 24),
-
-          // Security Features
-          const Align(alignment: Alignment.centerLeft, child: Text('Security', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 12),
-          _profileItem(Icons.shield, 'Security', 'PIN, Password, Pattern, Biometric'),
-          _profileItem(Icons.fingerprint, 'Anti-Hack', 'Device fingerprinting'),
-          _profileItem(Icons.smartphone, 'Anti-Tamper', 'SIM change detection'),
-          _profileItem(Icons.analytics, 'Storage Speed', 'Rankings • Optimization'),
-          const SizedBox(height: 16),
-
-          // Admin
-          const Align(alignment: Alignment.centerLeft, child: Text('Admin', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 12),
-          _profileItem(Icons.admin_panel_settings, 'Admin Mode', 'Node control'),
-          _profileItem(Icons.cloud_upload, 'Upload/Download', 'Server settings'),
-          _profileItem(Icons.compress, 'Compression', 'Data optimization'),
-          _profileItem(Icons.restart_alt, 'Recovery', 'Data recovery'),
-          const SizedBox(height: 16),
-
-          // Settings
-          const Align(alignment: Alignment.centerLeft, child: Text('Settings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 12),
-          _profileItem(Icons.forum, 'Forums', 'Community'),
-          _profileItem(Icons.settings, 'App Settings', 'Preferences'),
-          _profileItem(Icons.help, 'Help & Support', 'Get help'),
-          _profileItem(Icons.info, 'About PINC', 'Network info'),
-        ]),
-      ),
+      body: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
+        Container(padding: const EdgeInsets.all(24), decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), shape: BoxShape.circle),
+          child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14))),
+        const SizedBox(height: 16),
+        const Text('User', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 24),
+        _item(Icons.shield, 'Security', 'PIN, Biometric, Anti-theft'),
+        _item(Icons.sports_esports, 'Linked Games', 'PSN, Xbox, Steam, Mobile'),
+        _item(Icons.settings, 'Settings', 'App preferences'),
+      ])),
     );
   }
 
-  Widget _profileItem(IconData icon, String title, String subtitle) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+  Widget _item(IconData icon, String title, String sub) {
+    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
         Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
@@ -819,9 +682,8 @@ class ProfileTab extends StatelessWidget {
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(sub, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         ])),
-        const Icon(Icons.chevron_right, color: Colors.grey),
       ]),
     );
   }
