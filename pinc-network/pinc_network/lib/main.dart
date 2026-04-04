@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:async';
+import 'core/services/fee_service.dart';
+import 'core/services/storage_service.dart';
+import 'core/services/wallet_service.dart';
+import 'core/services/chat_service.dart';
+import 'core/services/job_service.dart';
+import 'core/services/sacco_service.dart';
+import 'core/services/game_service.dart';
+import 'core/services/internet_sharing_service.dart';
 
 void main() => runApp(const PincNetworkApp());
+
+// ==================== GLOBAL SERVICES ====================
+final feeService = FeeService();
+final storageService = LocalStorageService();
+final walletService = WalletService();
+final chatService = ChatService();
+final jobService = JobService();
+final saccoService = SACCOService();
+final gameService = GameService();
+final internetService = InternetSharingService();
 
 // ==================== MAIN APP ====================
 class PincNetworkApp extends StatelessWidget {
@@ -19,6 +37,81 @@ class PincNetworkApp extends StatelessWidget {
       ),
       home: const AuthenticationWrapper(),
     );
+  }
+}
+
+// ==================== ALL FEES DISPLAY WIDGET ====================
+class AllFeesDisplay extends StatelessWidget {
+  const AllFeesDisplay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final fees = feeService.getAllFees();
+    
+    return Scaffold(
+      appBar: AppBar(title: const Text('All Fees'), backgroundColor: const Color(0xFF0A0E14)),
+      backgroundColor: const Color(0xFF0A0E14),
+      body: ListView(padding: const EdgeInsets.all(16), children: [
+        _feeSection('Internet Sharing', [
+          _feeItem('Seller Subscription', '${fees['internetSeller']} PINC/month'),
+          _feeItem('Premium Sharing (10 users)', '${fees['premiumSharing']} PINC/month'),
+          _feeItem('Free Tier Limit', '${fees['freeSharingLimit']} people'),
+          _feeItem('SLA Threshold', '${(fees['p2pBetFee'] as double * 100).toStringAsFixed(0)}% uptime'),
+          _feeItem('Delist Threshold', '${(fees['developerBetFee'] as double * 100).toStringAsFixed(0)}% after 3 violations'),
+        ]),
+        _feeSection('Betting & Challenges', [
+          _feeItem('P2P Bet (Winner)', '${fees['p2pBetFee']}%'),
+          _feeItem('Developer Bet', '${fees['developerBetFee']}%'),
+          _feeItem('Creator Fee (Max)', '${fees['creatorMaxFee']}%'),
+          _feeItem('Minimum Wager', '${fees['minWager']} PINC'),
+          _feeItem('Global Challenge', '${fees['globalChallengeFee']} PINC'),
+          _feeItem('Challenge Collection', '${fees['challengeCollection']}%'),
+        ]),
+        _feeSection('Platform', [
+          _feeItem('Basic Subscription', '${fees['platformSubscription']} PINC/month'),
+          _feeItem('Free Job Bids', '${fees['freeJobBids']}/month'),
+          _feeItem('Unlimited Job Bids', '+${fees['unlimitedJobBids']} PINC/month'),
+        ]),
+        _feeSection('Jobs', [
+          _feeItem('Create Job', '${fees['createJobFee']}% of value'),
+          _feeItem('Receive Payment', '${fees['receivePaymentFee']}%'),
+        ]),
+        _feeSection('Withdrawals', [
+          _feeItem('100 - 1,000', '3 PINC'),
+          _feeItem('1,001 - 3,000', '10 PINC'),
+          _feeItem('3,001 - 10,000', '19 PINC'),
+          _feeItem('10,001 - 39,000', '35 PINC'),
+          _feeItem('39,001 - 60,000', '45 PINC'),
+          _feeItem('60,001 - 90,000', '60 PINC'),
+          _feeItem('90,001 - 500,000', '74 PINC'),
+          _feeItem('500,001+', '103 PINC'),
+        ]),
+        _feeSection('Other', [
+          _feeItem('API Access', '${fees['apiAccess']} PINC/month'),
+          _feeItem('API Limit', '${fees['apiLimit']}/hour'),
+          _feeItem('File Storage (Free)', '${fees['fileStorageFree']} TB'),
+          _feeItem('File Overage', '${fees['fileStorageOverage']} PINC/10TB'),
+          _feeItem('Min Withdrawal', '${fees['minWithdrawal']} PINC'),
+        ]),
+      ]),
+    );
+  }
+  
+  Widget _feeSection(String title, List<Widget> items) {
+    return Container(margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(16), 
+      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(color: Color(0xFF00D4AA), fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(height: 12),
+        ...items,
+      ]));
+  }
+  
+  Widget _feeItem(String label, String value) {
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: const TextStyle(color: Colors.white)),
+      Text(value, style: const TextStyle(color: Color(0xFF00D4AA))),
+    ]));
   }
 }
 
@@ -885,6 +978,7 @@ class _ProfileTabState extends State<ProfileTab> {
           _profileItem(Icons.notifications, 'Notification Settings', 'Manage alerts'),
           _profileItem(Icons.cloud_upload, 'Upload/Download', 'Server settings'),
           _profileItem(Icons.compress, 'Compression', 'Data optimization'),
+          _profileItem(Icons.monetization_on, 'All Fees', 'Complete fee breakdown', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllFeesDisplay()))),
           _profileItem(Icons.info, 'About PINC', 'Network info'),
           _profileItem(Icons.help, 'Help & Support', 'Get help'),
         ]),
@@ -896,19 +990,22 @@ class _ProfileTabState extends State<ProfileTab> {
     return Align(alignment: Alignment.centerLeft, child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)));
   }
 
-  Widget _profileItem(IconData icon, String title, String subtitle) {
-    return Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+  Widget _profileItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap ?? () {},
+      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: const Color(0xFF1A2028), borderRadius: BorderRadius.circular(12)),
+        child: Row(children: [
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xFF00D4AA).withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: const Color(0xFF00D4AA))),
-        const SizedBox(width: 16),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(width: 16),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          ])),
+          const Icon(Icons.chevron_right, color: Colors.grey),
         ])),
-        const Icon(Icons.chevron_right, color: Colors.grey),
-      ]));
+    );
   }
 
   void _createSacco(BuildContext context) {
