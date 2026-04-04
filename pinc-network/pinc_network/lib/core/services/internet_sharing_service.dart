@@ -289,7 +289,7 @@ class InternetSharingService {
         'uptimePercent': 92.0,
         'rating': 4.2,
       },
-    ].where((s) => s['speedMbps'] >= minSpeed).toList();
+    ].where((s) => (s['speedMbps'] as double) >= minSpeed).toList();
   }
   
   List<Map<String, dynamic>> _generateAvailableNodes() {

@@ -191,23 +191,23 @@ class FeeService {
   static double getFileStorageOverageFee() => 100.0;
   
   static Map<String, dynamic> calculateStorageFees(double usedTB) {
-    double freeLimit = getFreeStorageTB();
+    int freeLimit = getFreeStorageTB();
     if (usedTB <= freeLimit) {
       return {
         'usedTB': usedTB,
-        'freeLimit': freeLimit,
+        'freeLimit': freeLimit.toDouble(),
         'overageTB': 0.0,
         'fee': 0.0,
       };
     }
     
     double overageTB = usedTB - freeLimit;
-    double blocks = (overageTB / 10).ceil();
+    int blocks = (overageTB / 10).ceil();
     double fee = blocks * getFileStorageOverageFee();
     
     return {
       'usedTB': usedTB,
-      'freeLimit': freeLimit,
+      'freeLimit': freeLimit.toDouble(),
       'overageTB': overageTB,
       'fee': fee,
     };

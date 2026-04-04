@@ -326,10 +326,11 @@ class GameService {
     List players = List.from(_leagues[index]['players'] ?? []);
     players.sort((a, b) => (b['points'] ?? 0).compareTo(a['points'] ?? 0));
     
-    return players.asMap().entries.map((e) => {
+    List<Map<String, dynamic>> standings = players.asMap().entries.map((e) => {
       'position': e.key + 1,
-      ...e.value,
+      ...Map<String, dynamic>.from(e.value),
     }).toList();
+    return standings;
   }
   
   // ==================== BUILT-IN GAMES ====================

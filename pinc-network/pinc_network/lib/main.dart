@@ -12,16 +12,6 @@ import 'core/services/internet_sharing_service.dart';
 
 void main() => runApp(const PincNetworkApp());
 
-// ==================== GLOBAL SERVICES ====================
-final feeService = FeeService();
-final storageService = LocalStorageService();
-final walletService = WalletService();
-final chatService = ChatService();
-final jobService = JobService();
-final saccoService = SACCOService();
-final gameService = GameService();
-final internetService = InternetSharingService();
-
 // ==================== MAIN APP ====================
 class PincNetworkApp extends StatelessWidget {
   const PincNetworkApp({super.key});
@@ -46,7 +36,7 @@ class AllFeesDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fees = feeService.getAllFees();
+    final fees = FeeService.getAllFees();
     
     return Scaffold(
       appBar: AppBar(title: const Text('All Fees'), backgroundColor: const Color(0xFF0A0E14)),
@@ -56,8 +46,8 @@ class AllFeesDisplay extends StatelessWidget {
           _feeItem('Seller Subscription', '${fees['internetSeller']} PINC/month'),
           _feeItem('Premium Sharing (10 users)', '${fees['premiumSharing']} PINC/month'),
           _feeItem('Free Tier Limit', '${fees['freeSharingLimit']} people'),
-          _feeItem('SLA Threshold', '${(fees['p2pBetFee'] as double * 100).toStringAsFixed(0)}% uptime'),
-          _feeItem('Delist Threshold', '${(fees['developerBetFee'] as double * 100).toStringAsFixed(0)}% after 3 violations'),
+          _feeItem('SLA Threshold', '87% uptime'),
+          _feeItem('Delist Threshold', '76% after 3 violations'),
         ]),
         _feeSection('Betting & Challenges', [
           _feeItem('P2P Bet (Winner)', '${fees['p2pBetFee']}%'),
@@ -346,7 +336,7 @@ class VpnTab extends StatelessWidget {
         child: Column(children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
             child: const Column(children: [
               Icon(Icons.shield, size: 50, color: Color(0xFF0A0E14)),
               SizedBox(height: 8),
@@ -427,7 +417,7 @@ class _WalletTabState extends State<WalletTab> with SingleTickerProviderStateMix
       padding: const EdgeInsets.all(16),
       child: Column(children: [
         Container(width: double.infinity, padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), borderRadius: BorderRadius.circular(20)),
           child: Column(children: [
             const Text('Total Balance', style: TextStyle(color: Color(0xFF0A0E14), fontSize: 14)),
             const SizedBox(height: 8),
@@ -918,7 +908,7 @@ class _ProfileTabState extends State<ProfileTab> {
         padding: const EdgeInsets.all(16),
         child: Column(children: [
           // Profile Header
-          Container(padding: const EdgeInsets.all(24), decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), shape: BoxShape.circle),
+          Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF00D4AA), Color(0xFF00FF94)]), shape: BoxShape.circle),
             child: const Icon(Icons.person, size: 50, color: Color(0xFF0A0E14))),
           const SizedBox(height: 16),
           Text(widget.myPincId, style: const TextStyle(color: Color(0xFF00D4AA), fontSize: 16, fontWeight: FontWeight.bold)),
